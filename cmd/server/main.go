@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"pitch-on-db/handler"
+	"pitch-on-db/middleware"
 	"pitch-on-db/repository"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -35,10 +36,15 @@ func main() {
 	mux.HandleFunc("GET /pigeons", h.List)
 	mux.HandleFunc("GET /pigeons/{id}", h.Get)
 	mux.HandleFunc("POST /pigeons", h.Create)
+	mux.HandleFunc("PATCH /pigeons/{id}", h.Update)
+	mux.HandleFunc("DELETE /pigeons/{id}", h.Delete)
+
+	chain := middleware.RequestID(middleware.Logger(middleware.Recoverer(mux)))
 
 	addr := ":8080"
 	log.Printf("listening on %s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	if err := http.ListenAndServe(addr, chain); err != nil {
 		log.Fatalf("server: %v", err)
 	}
 }
+

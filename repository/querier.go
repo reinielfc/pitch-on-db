@@ -9,9 +9,11 @@ import (
 )
 
 type Querier interface {
-	CreatePigeon(ctx context.Context, name string) (Pigeon, error)
-	GetPigeon(ctx context.Context, id int64) (Pigeon, error)
-	ListPigeons(ctx context.Context) ([]Pigeon, error)
+	CreatePigeon(ctx context.Context, arg CreatePigeonParams) (CreatePigeonRow, error)
+	DeletePigeon(ctx context.Context, id int64) error
+	GetPigeon(ctx context.Context, id int64) (GetPigeonRow, error)
+	ListPigeons(ctx context.Context) ([]ListPigeonsRow, error)
+	UpdatePigeon(ctx context.Context, arg UpdatePigeonParams) (UpdatePigeonRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

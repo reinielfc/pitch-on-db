@@ -5,11 +5,15 @@
 package repository
 
 import (
+	"database/sql"
 	"time"
 )
 
 type Pigeon struct {
-	ID        int64
-	Name      string
-	CreatedAt time.Time
+	ID         int64
+	Name       string
+	CreatedAt  time.Time
+	BandNumber sql.NullString
+	BirthDate  sql.NullTime
+	Sex        sql.NullString
 }
