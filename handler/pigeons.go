@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"pitch-on-db/repository"
 )
@@ -92,7 +93,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 }
 
 func parseID(r *http.Request) (int64, error) {
-	return strconv.ParseInt(r.PathValue("id"), 10, 64)
+	return strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 }
 
 // GET /pigeons

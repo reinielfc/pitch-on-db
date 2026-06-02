@@ -11,10 +11,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"pitch-on-db/handler"
 	"pitch-on-db/repository"
 )
+
+// withURLParam sets a chi URL parameter on the request context for testing.
+func withURLParam(r *http.Request, key, val string) *http.Request {
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add(key, val)
+	return r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
+}
 
 var errDB = errors.New("db error")
 var errBandConflict = &pgconn.PgError{Code: "23505", ConstraintName: "pigeons_band_number_key"}
@@ -149,7 +157,7 @@ func TestGetFound(t *testing.T) {
 	h := handler.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodGet, "/pigeons/42", nil)
-	req.SetPathValue("id", "42")
+	req = withURLParam(req, "id", "42")
 	rec := httptest.NewRecorder()
 	h.Get(rec, req)
 
@@ -166,7 +174,7 @@ func TestGetNotFound(t *testing.T) {
 	h := handler.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodGet, "/pigeons/99", nil)
-	req.SetPathValue("id", "99")
+	req = withURLParam(req, "id", "99")
 	rec := httptest.NewRecorder()
 	h.Get(rec, req)
 
@@ -180,7 +188,7 @@ func TestGetInvalidID(t *testing.T) {
 	h := handler.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodGet, "/pigeons/abc", nil)
-	req.SetPathValue("id", "abc")
+	req = withURLParam(req, "id", "abc")
 	rec := httptest.NewRecorder()
 	h.Get(rec, req)
 
@@ -194,7 +202,7 @@ func TestGetDBError(t *testing.T) {
 	h := handler.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodGet, "/pigeons/1", nil)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Get(rec, req)
 
@@ -394,7 +402,7 @@ func TestUpdate(t *testing.T) {
 
 	body := strings.NewReader(`{"name":"Duke"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Update(rec, req)
 
@@ -416,7 +424,7 @@ func TestUpdateNotFound(t *testing.T) {
 
 	body := strings.NewReader(`{"name":"Duke"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/99", body)
-	req.SetPathValue("id", "99")
+	req = withURLParam(req, "id", "99")
 	rec := httptest.NewRecorder()
 	h.Update(rec, req)
 
@@ -431,7 +439,7 @@ func TestUpdateInvalidID(t *testing.T) {
 
 	body := strings.NewReader(`{"name":"Duke"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/abc", body)
-	req.SetPathValue("id", "abc")
+	req = withURLParam(req, "id", "abc")
 	rec := httptest.NewRecorder()
 	h.Update(rec, req)
 
@@ -446,7 +454,7 @@ func TestUpdateEmptyName(t *testing.T) {
 
 	body := strings.NewReader(`{"name":"  "}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Update(rec, req)
 
@@ -461,7 +469,7 @@ func TestUpdateDBError(t *testing.T) {
 
 	body := strings.NewReader(`{"name":"Duke"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Update(rec, req)
 
@@ -476,7 +484,7 @@ func TestUpdateBandNumberConflict(t *testing.T) {
 
 	body := strings.NewReader(`{"band_number":"AU2024-001"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Update(rec, req)
 
@@ -492,7 +500,7 @@ func TestUpdateClearBandNumberWithNull(t *testing.T) {
 
 	body := strings.NewReader(`{"band_number":null}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Update(rec, req)
 
@@ -536,7 +544,7 @@ func TestDelete(t *testing.T) {
 	h := handler.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodDelete, "/pigeons/1", nil)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Delete(rec, req)
 
@@ -550,7 +558,7 @@ func TestDeleteInvalidID(t *testing.T) {
 	h := handler.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodDelete, "/pigeons/abc", nil)
-	req.SetPathValue("id", "abc")
+	req = withURLParam(req, "id", "abc")
 	rec := httptest.NewRecorder()
 	h.Delete(rec, req)
 
@@ -564,7 +572,7 @@ func TestDeleteDBError(t *testing.T) {
 	h := handler.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodDelete, "/pigeons/1", nil)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Delete(rec, req)
 
@@ -581,7 +589,7 @@ func TestUpdateSetBirthDate(t *testing.T) {
 
 	body := strings.NewReader(`{"birth_date":"2022-05-10"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Update(rec, req)
 
@@ -604,7 +612,7 @@ func TestUpdateClearBirthDateWithNull(t *testing.T) {
 
 	body := strings.NewReader(`{"birth_date":null}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Update(rec, req)
 
@@ -626,7 +634,7 @@ func TestUpdateInvalidBirthDate(t *testing.T) {
 
 	body := strings.NewReader(`{"birth_date":"not-a-date"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Update(rec, req)
 
@@ -641,7 +649,7 @@ func TestUpdateSetSex(t *testing.T) {
 
 	body := strings.NewReader(`{"sex":"F"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Update(rec, req)
 
@@ -664,7 +672,7 @@ func TestUpdateClearSexWithNull(t *testing.T) {
 
 	body := strings.NewReader(`{"sex":null}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Update(rec, req)
 
@@ -686,7 +694,7 @@ func TestUpdateInvalidSex(t *testing.T) {
 
 	body := strings.NewReader(`{"sex":"X"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
-	req.SetPathValue("id", "1")
+	req = withURLParam(req, "id", "1")
 	rec := httptest.NewRecorder()
 	h.Update(rec, req)
 

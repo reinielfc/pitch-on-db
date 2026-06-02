@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-chi/chi/v5"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"pitch-on-db/handler"
-	"pitch-on-db/middleware"
 	"pitch-on-db/repository"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -32,18 +33,20 @@ func main() {
 	q := repository.New(db)
 	h := handler.NewPigeonHandler(q)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /pigeons", h.List)
-	mux.HandleFunc("GET /pigeons/{id}", h.Get)
-	mux.HandleFunc("POST /pigeons", h.Create)
-	mux.HandleFunc("PATCH /pigeons/{id}", h.Update)
-	mux.HandleFunc("DELETE /pigeons/{id}", h.Delete)
+	r := chi.NewRouter()
+	r.Use(chimiddleware.RequestID)
+	r.Use(chimiddleware.Logger)
+	r.Use(chimiddleware.Recoverer)
 
-	chain := middleware.RequestID(middleware.Logger(middleware.Recoverer(mux)))
+	r.Get("/pigeons", h.List)
+	r.Get("/pigeons/{id}", h.Get)
+	r.Post("/pigeons", h.Create)
+	r.Patch("/pigeons/{id}", h.Update)
+	r.Delete("/pigeons/{id}", h.Delete)
 
 	addr := ":8080"
 	log.Printf("listening on %s", addr)
-	if err := http.ListenAndServe(addr, chain); err != nil {
+	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatalf("server: %v", err)
 	}
 }

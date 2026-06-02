@@ -16,7 +16,7 @@ build: generate
 	@echo "Build complete: bin/$(APP_NAME)"
 
 run:
-	@go run cmd/server/main.go
+	@set -a && . ./.env && set +a && go run cmd/server/main.go
 
 generate:
 	@$(SQLC) generate
