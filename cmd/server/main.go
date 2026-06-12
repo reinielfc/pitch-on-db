@@ -72,14 +72,25 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"message": "pong"})
 	})
 
+	ph := handlers.NewPigeonHandler(db)
+	r.GET("/pigeons", ph.List)
+	r.POST("/pigeons", ph.Create)
+
 	pigeons := r.Group("/pigeons")
 	{
-		ph := handlers.NewPigeonHandler(db)
-		pigeons.GET("", ph.List)
 		pigeons.GET("/:id", ph.Get)
-		pigeons.POST("", ph.Create)
 		pigeons.PATCH("/:id", ph.Update)
 		pigeons.DELETE("/:id", ph.Delete)
+
+		th := handlers.NewTagHandler(db)
+		pigeons.GET("/:id/tags", th.List)
+		pigeons.PUT("/:id/tags", th.Set)
+
+		tags := pigeons.Group("/:id/tags")
+		{
+			tags.POST("/:name", th.Add)
+			tags.DELETE("/:name", th.Remove)
+		}
 	}
 
 	r.Run(":" + cfg.App.Port)
