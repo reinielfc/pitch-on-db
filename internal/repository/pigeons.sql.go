@@ -7,7 +7,6 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"time"
 )
 
@@ -19,17 +18,17 @@ RETURNING id, name, band_number, birth_date, sex, created_at
 
 type CreatePigeonParams struct {
 	Name       string
-	BandNumber sql.NullString
-	BirthDate  sql.NullTime
-	Sex        sql.NullString
+	BandNumber *string
+	BirthDate  *time.Time
+	Sex        *string
 }
 
 type CreatePigeonRow struct {
 	ID         int64
 	Name       string
-	BandNumber sql.NullString
-	BirthDate  sql.NullTime
-	Sex        sql.NullString
+	BandNumber *string
+	BirthDate  *time.Time
+	Sex        *string
 	CreatedAt  time.Time
 }
 
@@ -71,9 +70,9 @@ WHERE id = $1
 type GetPigeonRow struct {
 	ID         int64
 	Name       string
-	BandNumber sql.NullString
-	BirthDate  sql.NullTime
-	Sex        sql.NullString
+	BandNumber *string
+	BirthDate  *time.Time
+	Sex        *string
 	CreatedAt  time.Time
 }
 
@@ -100,9 +99,9 @@ ORDER BY id
 type ListPigeonsRow struct {
 	ID         int64
 	Name       string
-	BandNumber sql.NullString
-	BirthDate  sql.NullTime
-	Sex        sql.NullString
+	BandNumber *string
+	BirthDate  *time.Time
+	Sex        *string
 	CreatedAt  time.Time
 }
 
@@ -148,22 +147,22 @@ RETURNING id, name, band_number, birth_date, sex, created_at
 `
 
 type UpdatePigeonParams struct {
-	Name          sql.NullString
+	Name          *string
 	SetBandNumber bool
-	BandNumber    sql.NullString
+	BandNumber    *string
 	SetBirthDate  bool
-	BirthDate     sql.NullTime
+	BirthDate     *time.Time
 	SetSex        bool
-	Sex           sql.NullString
+	Sex           *string
 	ID            int64
 }
 
 type UpdatePigeonRow struct {
 	ID         int64
 	Name       string
-	BandNumber sql.NullString
-	BirthDate  sql.NullTime
-	Sex        sql.NullString
+	BandNumber *string
+	BirthDate  *time.Time
+	Sex        *string
 	CreatedAt  time.Time
 }
 
