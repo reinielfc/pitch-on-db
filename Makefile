@@ -1,34 +1,41 @@
-APP_NAME=pitch-on-db
-DB_DSN=$(or $(DATABASE_URL),postgres://pitchondb:pitchondb@localhost:5432/pitchondb?sslmode=disable)
+APP_NAME := pitch-on-db
 
-GOBIN := $(shell go env GOBIN)
-ifeq ($(GOBIN),)
-GOBIN := $(shell go env GOPATH)/bin
-endif
-SQLC  := $(GOBIN)/sqlc
-GOOSE := $(GOBIN)/goose
+COMPOSE  := docker compose -f docker-compose.yml -f .docker/monitoring.docker-compose.yml
 
-.PHONY: build run clean generate migrate docker-up docker-down
+gobin    := $(or $(shell go env GOBIN),$(shell go env GOPATH)/bin)
+SQLC	 := $(gobin)/sqlc
+GOOSE	 := $(gobin)/goose
 
-build: generate
-	@mkdir -vp bin
-	@go build -v -o bin/$(APP_NAME) cmd/server/main.go
-	@echo "Build complete: bin/$(APP_NAME)"
+-include .env
+export
 
-run:
-	@set -a && . ./.env && set +a && go run cmd/server/main.go
+DATABASE_URL ?= "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=$(POSTGRES_SSLMODE)"
+
+.PHONY: setup generate build migrate run docker-up docker-down clean
+
+setup:
+	@go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+	@go install github.com/pressly/goose/v3/cmd/goose@latest
+	@echo "Installed sqlc and goose binaries"
 
 generate:
 	@$(SQLC) generate --file database/sqlc.yml
 
-migrate:
-	@$(GOOSE) -dir migrations postgres "$(DB_DSN)" up
+build: clean
+	@mkdir -vp bin
+	@go build -o bin/$(APP_NAME) cmd/server/main.go
+	@echo "Built $(APP_NAME) binary at bin/$(APP_NAME)"
 
-docker-up:
-	@docker compose up -d
+migrate:
+	@$(GOOSE) -dir database/migrations postgres "$(DATABASE_URL)" up
+
+run: docker-up migrate
+
+docker-up: 
+	@$(COMPOSE) up -d --build
 
 docker-down:
-	@docker compose down
+	@$(COMPOSE) down
 
 clean:
-	@rm -vrf bin
+	@rm -rvf bin
