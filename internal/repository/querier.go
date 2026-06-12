@@ -9,11 +9,16 @@ import (
 )
 
 type Querier interface {
+	AddPigeonTag(ctx context.Context, arg AddPigeonTagParams) error
+	ClearPigeonTags(ctx context.Context, pigeonID int64) error
 	CreatePigeon(ctx context.Context, arg CreatePigeonParams) (CreatePigeonRow, error)
 	DeletePigeon(ctx context.Context, id int64) error
 	GetPigeon(ctx context.Context, id int64) (GetPigeonRow, error)
+	GetPigeonTags(ctx context.Context, pigeonID int64) ([]Tag, error)
 	ListPigeons(ctx context.Context) ([]ListPigeonsRow, error)
+	RemovePigeonTag(ctx context.Context, arg RemovePigeonTagParams) error
 	UpdatePigeon(ctx context.Context, arg UpdatePigeonParams) (UpdatePigeonRow, error)
+	UpsertTag(ctx context.Context, name string) (Tag, error)
 }
 
 var _ Querier = (*Queries)(nil)

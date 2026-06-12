@@ -16,3 +16,13 @@ type Pigeon struct {
 	BirthDate  *time.Time
 	Sex        *string
 }
+
+type PigeonTag struct {
+	PigeonID int64
+	TagID    int64
+}
+
+type Tag struct {
+	ID   int64
+	Name string
+}
