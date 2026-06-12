@@ -19,7 +19,7 @@ run:
 	@set -a && . ./.env && set +a && go run cmd/server/main.go
 
 generate:
-	@$(SQLC) generate
+	@$(SQLC) generate --file database/sqlc.yml
 
 migrate:
 	@$(GOOSE) -dir migrations postgres "$(DB_DSN)" up

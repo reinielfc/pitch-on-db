@@ -1,4 +1,4 @@
-package handler_test
+package handlers_test
 
 import (
 	"context"
@@ -11,10 +11,11 @@ import (
 	"testing"
 	"time"
 
+	"pitch-on-db/internal/handlers"
+	"pitch-on-db/internal/repository"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"pitch-on-db/handler"
-	"pitch-on-db/repository"
 )
 
 // withURLParam sets a chi URL parameter on the request context for testing.
@@ -96,7 +97,7 @@ func (m *mockQuerier) DeletePigeon(_ context.Context, id int64) error {
 
 func TestList(t *testing.T) {
 	q := &mockQuerier{pigeons: []repository.ListPigeonsRow{{ID: 1, Name: "Percy", CreatedAt: fixedTime}}}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodGet, "/pigeons", nil)
 	rec := httptest.NewRecorder()
@@ -119,7 +120,7 @@ func TestList(t *testing.T) {
 
 func TestListEmpty(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodGet, "/pigeons", nil)
 	rec := httptest.NewRecorder()
@@ -139,7 +140,7 @@ func TestListEmpty(t *testing.T) {
 
 func TestListDBError(t *testing.T) {
 	q := &mockQuerier{err: errDB}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodGet, "/pigeons", nil)
 	rec := httptest.NewRecorder()
@@ -154,7 +155,7 @@ func TestListDBError(t *testing.T) {
 
 func TestGetFound(t *testing.T) {
 	q := &mockQuerier{pigeons: []repository.ListPigeonsRow{{ID: 42, Name: "Duke", CreatedAt: fixedTime}}}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodGet, "/pigeons/42", nil)
 	req = withURLParam(req, "id", "42")
@@ -171,7 +172,7 @@ func TestGetFound(t *testing.T) {
 
 func TestGetNotFound(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodGet, "/pigeons/99", nil)
 	req = withURLParam(req, "id", "99")
@@ -185,7 +186,7 @@ func TestGetNotFound(t *testing.T) {
 
 func TestGetInvalidID(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodGet, "/pigeons/abc", nil)
 	req = withURLParam(req, "id", "abc")
@@ -199,7 +200,7 @@ func TestGetInvalidID(t *testing.T) {
 
 func TestGetDBError(t *testing.T) {
 	q := &mockQuerier{err: errDB}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodGet, "/pigeons/1", nil)
 	req = withURLParam(req, "id", "1")
@@ -215,7 +216,7 @@ func TestGetDBError(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"Tweety"}`)
 	req := httptest.NewRequest(http.MethodPost, "/pigeons", body)
@@ -232,7 +233,7 @@ func TestCreate(t *testing.T) {
 
 func TestCreateWithAllFields(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"Percy","band_number":"AU2024-001","birth_date":"2024-03-15","sex":"M"}`)
 	req := httptest.NewRequest(http.MethodPost, "/pigeons", body)
@@ -256,7 +257,7 @@ func TestCreateWithAllFields(t *testing.T) {
 
 func TestCreateInvalidSex(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"Percy","sex":"unknown"}`)
 	req := httptest.NewRequest(http.MethodPost, "/pigeons", body)
@@ -270,7 +271,7 @@ func TestCreateInvalidSex(t *testing.T) {
 
 func TestCreateInvalidBirthDate(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"Percy","birth_date":"not-a-date"}`)
 	req := httptest.NewRequest(http.MethodPost, "/pigeons", body)
@@ -284,7 +285,7 @@ func TestCreateInvalidBirthDate(t *testing.T) {
 
 func TestCreateEmptyName(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"   "}`)
 	req := httptest.NewRequest(http.MethodPost, "/pigeons", body)
@@ -298,7 +299,7 @@ func TestCreateEmptyName(t *testing.T) {
 
 func TestCreateMissingName(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{}`)
 	req := httptest.NewRequest(http.MethodPost, "/pigeons", body)
@@ -312,7 +313,7 @@ func TestCreateMissingName(t *testing.T) {
 
 func TestCreateUnknownField(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"Bird","extra":"field"}`)
 	req := httptest.NewRequest(http.MethodPost, "/pigeons", body)
@@ -326,7 +327,7 @@ func TestCreateUnknownField(t *testing.T) {
 
 func TestCreateMalformedJSON(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{bad json}`)
 	req := httptest.NewRequest(http.MethodPost, "/pigeons", body)
@@ -340,7 +341,7 @@ func TestCreateMalformedJSON(t *testing.T) {
 
 func TestCreateBodyTooLarge(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"` + strings.Repeat("a", 1<<20+1) + `"}`)
 	req := httptest.NewRequest(http.MethodPost, "/pigeons", body)
@@ -354,7 +355,7 @@ func TestCreateBodyTooLarge(t *testing.T) {
 
 func TestCreateTrailingData(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"Tweety"} {"name":"Other"}`)
 	req := httptest.NewRequest(http.MethodPost, "/pigeons", body)
@@ -368,7 +369,7 @@ func TestCreateTrailingData(t *testing.T) {
 
 func TestCreateDBError(t *testing.T) {
 	q := &mockQuerier{err: errDB}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"Tweety"}`)
 	req := httptest.NewRequest(http.MethodPost, "/pigeons", body)
@@ -382,7 +383,7 @@ func TestCreateDBError(t *testing.T) {
 
 func TestCreateBandNumberConflict(t *testing.T) {
 	q := &mockQuerier{err: errBandConflict}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"Tweety","band_number":"AU2024-001"}`)
 	req := httptest.NewRequest(http.MethodPost, "/pigeons", body)
@@ -398,7 +399,7 @@ func TestCreateBandNumberConflict(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	q := &mockQuerier{pigeons: []repository.ListPigeonsRow{{ID: 1, Name: "Percy", CreatedAt: fixedTime}}}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"Duke"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
@@ -420,7 +421,7 @@ func TestUpdate(t *testing.T) {
 
 func TestUpdateNotFound(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"Duke"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/99", body)
@@ -435,7 +436,7 @@ func TestUpdateNotFound(t *testing.T) {
 
 func TestUpdateInvalidID(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"Duke"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/abc", body)
@@ -450,7 +451,7 @@ func TestUpdateInvalidID(t *testing.T) {
 
 func TestUpdateEmptyName(t *testing.T) {
 	q := &mockQuerier{pigeons: []repository.ListPigeonsRow{{ID: 1, Name: "Percy", CreatedAt: fixedTime}}}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"  "}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
@@ -465,7 +466,7 @@ func TestUpdateEmptyName(t *testing.T) {
 
 func TestUpdateDBError(t *testing.T) {
 	q := &mockQuerier{err: errDB}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"Duke"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
@@ -480,7 +481,7 @@ func TestUpdateDBError(t *testing.T) {
 
 func TestUpdateBandNumberConflict(t *testing.T) {
 	q := &mockQuerier{err: errBandConflict}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"band_number":"AU2024-001"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
@@ -496,7 +497,7 @@ func TestUpdateBandNumberConflict(t *testing.T) {
 func TestUpdateClearBandNumberWithNull(t *testing.T) {
 	band := sql.NullString{String: "AU2024-001", Valid: true}
 	q := &mockQuerier{pigeons: []repository.ListPigeonsRow{{ID: 1, Name: "Percy", BandNumber: band, CreatedAt: fixedTime}}}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"band_number":null}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
@@ -518,7 +519,7 @@ func TestUpdateClearBandNumberWithNull(t *testing.T) {
 
 func TestCreateEmptyBandNumberTreatedAsNull(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"name":"Percy","band_number":"   "}`)
 	req := httptest.NewRequest(http.MethodPost, "/pigeons", body)
@@ -541,7 +542,7 @@ func TestCreateEmptyBandNumberTreatedAsNull(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodDelete, "/pigeons/1", nil)
 	req = withURLParam(req, "id", "1")
@@ -555,7 +556,7 @@ func TestDelete(t *testing.T) {
 
 func TestDeleteInvalidID(t *testing.T) {
 	q := &mockQuerier{}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodDelete, "/pigeons/abc", nil)
 	req = withURLParam(req, "id", "abc")
@@ -569,7 +570,7 @@ func TestDeleteInvalidID(t *testing.T) {
 
 func TestDeleteDBError(t *testing.T) {
 	q := &mockQuerier{err: errDB}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	req := httptest.NewRequest(http.MethodDelete, "/pigeons/1", nil)
 	req = withURLParam(req, "id", "1")
@@ -585,7 +586,7 @@ func TestDeleteDBError(t *testing.T) {
 
 func TestUpdateSetBirthDate(t *testing.T) {
 	q := &mockQuerier{pigeons: []repository.ListPigeonsRow{{ID: 1, Name: "Percy", CreatedAt: fixedTime}}}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"birth_date":"2022-05-10"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
@@ -608,7 +609,7 @@ func TestUpdateSetBirthDate(t *testing.T) {
 func TestUpdateClearBirthDateWithNull(t *testing.T) {
 	birth := sql.NullTime{Time: time.Date(2022, 5, 10, 0, 0, 0, 0, time.UTC), Valid: true}
 	q := &mockQuerier{pigeons: []repository.ListPigeonsRow{{ID: 1, Name: "Percy", BirthDate: birth, CreatedAt: fixedTime}}}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"birth_date":null}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
@@ -630,7 +631,7 @@ func TestUpdateClearBirthDateWithNull(t *testing.T) {
 
 func TestUpdateInvalidBirthDate(t *testing.T) {
 	q := &mockQuerier{pigeons: []repository.ListPigeonsRow{{ID: 1, Name: "Percy", CreatedAt: fixedTime}}}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"birth_date":"not-a-date"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
@@ -645,7 +646,7 @@ func TestUpdateInvalidBirthDate(t *testing.T) {
 
 func TestUpdateSetSex(t *testing.T) {
 	q := &mockQuerier{pigeons: []repository.ListPigeonsRow{{ID: 1, Name: "Percy", CreatedAt: fixedTime}}}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"sex":"F"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
@@ -668,7 +669,7 @@ func TestUpdateSetSex(t *testing.T) {
 func TestUpdateClearSexWithNull(t *testing.T) {
 	sex := sql.NullString{String: "M", Valid: true}
 	q := &mockQuerier{pigeons: []repository.ListPigeonsRow{{ID: 1, Name: "Percy", Sex: sex, CreatedAt: fixedTime}}}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"sex":null}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)
@@ -690,7 +691,7 @@ func TestUpdateClearSexWithNull(t *testing.T) {
 
 func TestUpdateInvalidSex(t *testing.T) {
 	q := &mockQuerier{pigeons: []repository.ListPigeonsRow{{ID: 1, Name: "Percy", CreatedAt: fixedTime}}}
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	body := strings.NewReader(`{"sex":"X"}`)
 	req := httptest.NewRequest(http.MethodPatch, "/pigeons/1", body)

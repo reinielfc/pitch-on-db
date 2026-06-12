@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"os"
 
+	"pitch-on-db/internal/handlers"
+	"pitch-on-db/internal/repository"
+
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
-	"pitch-on-db/handler"
-	"pitch-on-db/repository"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -31,7 +32,7 @@ func main() {
 	}
 
 	q := repository.New(db)
-	h := handler.NewPigeonHandler(q)
+	h := handlers.NewPigeonHandler(q)
 
 	r := chi.NewRouter()
 	r.Use(chimiddleware.RequestID)
@@ -50,4 +51,3 @@ func main() {
 		log.Fatalf("server: %v", err)
 	}
 }
-

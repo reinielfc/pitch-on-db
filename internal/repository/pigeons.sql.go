@@ -53,7 +53,8 @@ func (q *Queries) CreatePigeon(ctx context.Context, arg CreatePigeonParams) (Cre
 }
 
 const deletePigeon = `-- name: DeletePigeon :exec
-DELETE FROM pigeons WHERE id = $1
+DELETE FROM pigeons
+WHERE id = $1
 `
 
 func (q *Queries) DeletePigeon(ctx context.Context, id int64) error {
@@ -62,7 +63,9 @@ func (q *Queries) DeletePigeon(ctx context.Context, id int64) error {
 }
 
 const getPigeon = `-- name: GetPigeon :one
-SELECT id, name, band_number, birth_date, sex, created_at FROM pigeons WHERE id = $1
+SELECT id, name, band_number, birth_date, sex, created_at
+FROM pigeons
+WHERE id = $1
 `
 
 type GetPigeonRow struct {
@@ -89,7 +92,9 @@ func (q *Queries) GetPigeon(ctx context.Context, id int64) (GetPigeonRow, error)
 }
 
 const listPigeons = `-- name: ListPigeons :many
-SELECT id, name, band_number, birth_date, sex, created_at FROM pigeons ORDER BY id
+SELECT id, name, band_number, birth_date, sex, created_at
+FROM pigeons
+ORDER BY id
 `
 
 type ListPigeonsRow struct {
@@ -132,7 +137,8 @@ func (q *Queries) ListPigeons(ctx context.Context) ([]ListPigeonsRow, error) {
 }
 
 const updatePigeon = `-- name: UpdatePigeon :one
-UPDATE pigeons SET
+UPDATE pigeons
+SET
     name        = COALESCE($1, name),
     band_number = CASE WHEN $2::bool THEN $3 ELSE band_number END,
     birth_date  = CASE WHEN $4::bool THEN $5 ELSE birth_date END,

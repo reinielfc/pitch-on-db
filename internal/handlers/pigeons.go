@@ -1,4 +1,4 @@
-package handler
+package handlers
 
 import (
 	"bytes"
@@ -12,10 +12,12 @@ import (
 	"strings"
 	"time"
 
+	"pitch-on-db/internal/repository"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"pitch-on-db/repository"
 )
+
 // optional represents a JSON field with three states: absent, explicit null, or a value.
 // This allows PATCH handlers to distinguish "not provided" from "set to null".
 type optional[T any] struct {
