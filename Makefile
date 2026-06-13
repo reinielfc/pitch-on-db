@@ -1,6 +1,6 @@
 APP_NAME := pitch-on-db
 
-COMPOSE  := docker compose -f docker-compose.yml -f .docker/monitoring.docker-compose.yml
+COMPOSE  := docker compose --env-file .env -f docker-compose.yml -f .docker/monitoring.docker-compose.yml
 
 gobin    := $(or $(shell go env GOBIN),$(shell go env GOPATH)/bin)
 SQLC	 := $(gobin)/sqlc
