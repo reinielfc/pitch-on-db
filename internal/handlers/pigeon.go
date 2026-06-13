@@ -30,14 +30,7 @@ func (h *PigeonHandler) List(c *gin.Context) {
 
 	resp := make([]pigeonResponse, len(pigeons))
 	for i, p := range pigeons {
-		resp[i] = pigeonResponse{
-			ID:         p.ID,
-			Name:       p.Name,
-			BandNumber: p.BandNumber,
-			BirthDate:  p.BirthDate,
-			Sex:        p.Sex,
-			CreatedAt:  p.CreatedAt,
-		}
+		resp[i] = toResponse(p)
 	}
 
 	c.JSON(http.StatusOK, resp)
@@ -55,14 +48,7 @@ func (h *PigeonHandler) Get(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, pigeonResponse{
-		ID:         pigeon.ID,
-		Name:       pigeon.Name,
-		BandNumber: pigeon.BandNumber,
-		BirthDate:  pigeon.BirthDate,
-		Sex:        pigeon.Sex,
-		CreatedAt:  pigeon.CreatedAt,
-	})
+	c.JSON(http.StatusOK, toResponse(pigeon))
 }
 
 func (h *PigeonHandler) Create(c *gin.Context) {
@@ -88,7 +74,7 @@ func (h *PigeonHandler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, pigeonRow(pigeon))
+	c.JSON(http.StatusCreated, toResponse(pigeon))
 }
 
 func (h *PigeonHandler) Update(c *gin.Context) {
@@ -123,14 +109,7 @@ func (h *PigeonHandler) Update(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, pigeonResponse{
-		ID:         pigeon.ID,
-		Name:       pigeon.Name,
-		BandNumber: pigeon.BandNumber,
-		BirthDate:  pigeon.BirthDate,
-		Sex:        pigeon.Sex,
-		CreatedAt:  pigeon.CreatedAt,
-	})
+	c.JSON(http.StatusOK, toResponse(pigeon))
 }
 
 func (h *PigeonHandler) Delete(c *gin.Context) {
@@ -156,7 +135,7 @@ type pigeonResponse struct {
 	CreatedAt  time.Time  `json:"created_at"`
 }
 
-func pigeonRow(p repository.CreatePigeonRow) pigeonResponse {
+func toResponse(p repository.Pigeon) pigeonResponse {
 	return pigeonResponse{
 		ID:         p.ID,
 		Name:       p.Name,
