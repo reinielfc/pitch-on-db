@@ -22,8 +22,9 @@ type Config struct {
 }
 
 type AppConfig struct {
-	Env  string `env:"APP_ENV"  envDefault:"development"`
-	Port string `env:"APP_PORT" envDefault:"8080"`
+	Env      string `env:"APP_ENV"       envDefault:"development"`
+	Port     string `env:"APP_PORT"      envDefault:"8080"`
+	LogLevel string `env:"APP_LOG_LEVEL" envDefault:"info"`
 }
 
 func (c AppConfig) LogValue() slog.Value {
@@ -55,8 +56,7 @@ func (c PostgresConfig) LogValue() slog.Value {
 
 func main() {
 	cfg := loadConfig()
-	initializeLogger()
-
+	initializeLogger(cfg.App.LogLevel)
 	db := connectToPostgresDB(cfg.Postgres)
 
 	r := gin.New()
@@ -67,6 +67,8 @@ func main() {
 	} else {
 		r.Use(middleware.RequestLogger())
 	}
+
+	r.Use(middleware.ErrorHandler())
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "pong"})
@@ -105,13 +107,21 @@ func loadConfig() Config {
 	return cfg
 }
 
-func initializeLogger() {
+func initializeLogger(lvl string) {
+	var level slog.Level
+	err := level.UnmarshalText([]byte(lvl))
+	if err != nil {
+		log.Fatalf("invalid log level: %v", err)
+	}
+
 	handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+		Level: level,
 	})
 
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
+
+	slog.Info("starting logger", "level", level)
 }
 
 func connectToPostgresDB(cfg PostgresConfig) *sql.DB {

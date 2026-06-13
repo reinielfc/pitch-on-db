@@ -18,13 +18,17 @@ func RequestLogger() gin.HandlerFunc {
 
 		c.Next()
 
-		slog.Info("request",
+		args := []any{
 			"status", c.Writer.Status(),
 			"latency", fmt.Sprintf("%v", time.Since(t)),
 			"client_ip", c.ClientIP(),
 			"method", c.Request.Method,
 			"path", c.Request.URL.Path,
-		)
+		}
+		if errs := c.Errors; len(errs) > 0 {
+			args = append(args, "errors", errs.Errors())
+		}
+		slog.Info("request", args...)
 	}
 }
 
@@ -34,7 +38,11 @@ func VerboseRequestLogger() gin.HandlerFunc {
 
 		var reqBody []byte
 		if c.Request.Body != nil {
-			reqBody, _ = io.ReadAll(c.Request.Body)
+			var err error
+			reqBody, err = io.ReadAll(c.Request.Body)
+			if err != nil {
+				slog.Warn("failed to read request body", "error", err)
+			}
 			c.Request.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 		}
 
@@ -43,7 +51,7 @@ func VerboseRequestLogger() gin.HandlerFunc {
 
 		c.Next()
 
-		slog.Info("request",
+		args := []any{
 			"status", c.Writer.Status(),
 			"latency", fmt.Sprintf("%v", time.Since(t)),
 			"client_ip", c.ClientIP(),
@@ -51,7 +59,11 @@ func VerboseRequestLogger() gin.HandlerFunc {
 			"path", c.Request.URL.Path,
 			slog.Any("request", requestLog{headers: c.Request.Header, body: reqBody}),
 			slog.Any("response", responseLog{headers: c.Writer.Header(), body: respBuf}),
-		)
+		}
+		if errs := c.Errors; len(errs) > 0 {
+			args = append(args, "errors", errs.Errors())
+		}
+		slog.Info("request", args...)
 	}
 }
 
