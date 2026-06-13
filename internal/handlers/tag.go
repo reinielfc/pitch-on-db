@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 
+	appErr "pitch-on-db/internal/errors"
 	"pitch-on-db/internal/repository"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +19,7 @@ func NewTagHandler(db *sql.DB) *TagHandler {
 	return &TagHandler{db: db, q: repository.New(db)}
 }
 
+// List returns all tags for a pigeon by ID.
 func (h *TagHandler) List(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {
@@ -26,7 +28,7 @@ func (h *TagHandler) List(c *gin.Context) {
 
 	tags, err := h.q.GetPigeonTags(c.Request.Context(), id)
 	if err != nil {
-		dbError(c, err)
+		c.Error(appErr.DBResource("pigeon tags", err))
 		return
 	}
 
@@ -49,13 +51,13 @@ func (h *TagHandler) Set(c *gin.Context) {
 		Tags []string `json:"tags" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Error(err)
 		return
 	}
 
 	tx, err := h.db.BeginTx(c.Request.Context(), nil)
 	if err != nil {
-		dbError(c, err)
+		c.Error(appErr.DBResource("pigeon tags", err))
 		return
 	}
 	defer tx.Rollback()
@@ -63,27 +65,27 @@ func (h *TagHandler) Set(c *gin.Context) {
 	q := repository.New(tx)
 
 	if err := q.ClearPigeonTags(c.Request.Context(), id); err != nil {
-		dbError(c, err)
+		c.Error(appErr.DBResource("pigeon tags", err))
 		return
 	}
 
 	for _, name := range req.Tags {
 		tag, err := q.UpsertTag(c.Request.Context(), name)
 		if err != nil {
-			dbError(c, err)
+			c.Error(appErr.DBResource("pigeon tags", err))
 			return
 		}
 		if err := q.AddPigeonTag(c.Request.Context(), repository.AddPigeonTagParams{
 			PigeonID: id,
 			TagID:    tag.ID,
 		}); err != nil {
-			dbError(c, err)
+			c.Error(appErr.DBResource("pigeon tags", err))
 			return
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		dbError(c, err)
+		c.Error(appErr.DBResource("pigeon tags", err))
 		return
 	}
 
@@ -99,7 +101,7 @@ func (h *TagHandler) Add(c *gin.Context) {
 
 	tx, err := h.db.BeginTx(c.Request.Context(), nil)
 	if err != nil {
-		dbError(c, err)
+		c.Error(appErr.DBResource("pigeon tags", err))
 		return
 	}
 	defer tx.Rollback()
@@ -108,19 +110,19 @@ func (h *TagHandler) Add(c *gin.Context) {
 
 	tag, err := q.UpsertTag(c.Request.Context(), c.Param("name"))
 	if err != nil {
-		dbError(c, err)
+		c.Error(appErr.DBResource("pigeon tags", err))
 		return
 	}
 	if err := q.AddPigeonTag(c.Request.Context(), repository.AddPigeonTagParams{
 		PigeonID: id,
 		TagID:    tag.ID,
 	}); err != nil {
-		dbError(c, err)
+		c.Error(appErr.DBResource("pigeon tags", err))
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		dbError(c, err)
+		c.Error(appErr.DBResource("pigeon tags", err))
 		return
 	}
 
@@ -138,7 +140,7 @@ func (h *TagHandler) Remove(c *gin.Context) {
 		PigeonID: id,
 		Name:     c.Param("name"),
 	}); err != nil {
-		dbError(c, err)
+		c.Error(appErr.DBResource("pigeon tags", err))
 		return
 	}
 

@@ -7,6 +7,8 @@ import (
 
 	"pitch-on-db/internal/repository"
 
+	appErr "pitch-on-db/internal/errors"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,7 +24,7 @@ func NewPigeonHandler(db *sql.DB) *PigeonHandler {
 func (h *PigeonHandler) List(c *gin.Context) {
 	pigeons, err := h.q.ListPigeons(c.Request.Context())
 	if err != nil {
-		dbError(c, err)
+		c.Error(appErr.DBResource("pigeon", err))
 		return
 	}
 
@@ -49,7 +51,7 @@ func (h *PigeonHandler) Get(c *gin.Context) {
 
 	pigeon, err := h.q.GetPigeon(c.Request.Context(), id)
 	if err != nil {
-		dbError(c, err)
+		c.Error(appErr.DBResource("pigeon", err))
 		return
 	}
 
@@ -71,7 +73,7 @@ func (h *PigeonHandler) Create(c *gin.Context) {
 		Sex        *string    `json:"sex"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Error(err)
 		return
 	}
 
@@ -82,7 +84,7 @@ func (h *PigeonHandler) Create(c *gin.Context) {
 		Sex:        req.Sex,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Error(appErr.DBResource("pigeon", err))
 		return
 	}
 
@@ -102,7 +104,7 @@ func (h *PigeonHandler) Update(c *gin.Context) {
 		Sex        *string    `json:"sex"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Error(err)
 		return
 	}
 
@@ -117,7 +119,7 @@ func (h *PigeonHandler) Update(c *gin.Context) {
 		Sex:           req.Sex,
 	})
 	if err != nil {
-		dbError(c, err)
+		c.Error(appErr.DBResource("pigeon", err))
 		return
 	}
 
@@ -138,7 +140,7 @@ func (h *PigeonHandler) Delete(c *gin.Context) {
 	}
 
 	if err := h.q.DeletePigeon(c.Request.Context(), id); err != nil {
-		dbError(c, err)
+		c.Error(appErr.DBResource("pigeon", err))
 		return
 	}
 
