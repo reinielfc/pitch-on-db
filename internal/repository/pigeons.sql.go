@@ -7,7 +7,6 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"time"
 )
 
@@ -19,17 +18,17 @@ RETURNING id, name, band_number, birth_date, sex, created_at
 
 type CreatePigeonParams struct {
 	Name       string
-	BandNumber sql.NullString
-	BirthDate  sql.NullTime
-	Sex        sql.NullString
+	BandNumber *string
+	BirthDate  *time.Time
+	Sex        *string
 }
 
 type CreatePigeonRow struct {
 	ID         int64
 	Name       string
-	BandNumber sql.NullString
-	BirthDate  sql.NullTime
-	Sex        sql.NullString
+	BandNumber *string
+	BirthDate  *time.Time
+	Sex        *string
 	CreatedAt  time.Time
 }
 
@@ -53,7 +52,8 @@ func (q *Queries) CreatePigeon(ctx context.Context, arg CreatePigeonParams) (Cre
 }
 
 const deletePigeon = `-- name: DeletePigeon :exec
-DELETE FROM pigeons WHERE id = $1
+DELETE FROM pigeons
+WHERE id = $1
 `
 
 func (q *Queries) DeletePigeon(ctx context.Context, id int64) error {
@@ -62,15 +62,17 @@ func (q *Queries) DeletePigeon(ctx context.Context, id int64) error {
 }
 
 const getPigeon = `-- name: GetPigeon :one
-SELECT id, name, band_number, birth_date, sex, created_at FROM pigeons WHERE id = $1
+SELECT id, name, band_number, birth_date, sex, created_at
+FROM pigeons
+WHERE id = $1
 `
 
 type GetPigeonRow struct {
 	ID         int64
 	Name       string
-	BandNumber sql.NullString
-	BirthDate  sql.NullTime
-	Sex        sql.NullString
+	BandNumber *string
+	BirthDate  *time.Time
+	Sex        *string
 	CreatedAt  time.Time
 }
 
@@ -89,15 +91,17 @@ func (q *Queries) GetPigeon(ctx context.Context, id int64) (GetPigeonRow, error)
 }
 
 const listPigeons = `-- name: ListPigeons :many
-SELECT id, name, band_number, birth_date, sex, created_at FROM pigeons ORDER BY id
+SELECT id, name, band_number, birth_date, sex, created_at
+FROM pigeons
+ORDER BY id
 `
 
 type ListPigeonsRow struct {
 	ID         int64
 	Name       string
-	BandNumber sql.NullString
-	BirthDate  sql.NullTime
-	Sex        sql.NullString
+	BandNumber *string
+	BirthDate  *time.Time
+	Sex        *string
 	CreatedAt  time.Time
 }
 
@@ -132,7 +136,8 @@ func (q *Queries) ListPigeons(ctx context.Context) ([]ListPigeonsRow, error) {
 }
 
 const updatePigeon = `-- name: UpdatePigeon :one
-UPDATE pigeons SET
+UPDATE pigeons
+SET
     name        = COALESCE($1, name),
     band_number = CASE WHEN $2::bool THEN $3 ELSE band_number END,
     birth_date  = CASE WHEN $4::bool THEN $5 ELSE birth_date END,
@@ -142,22 +147,22 @@ RETURNING id, name, band_number, birth_date, sex, created_at
 `
 
 type UpdatePigeonParams struct {
-	Name          sql.NullString
+	Name          *string
 	SetBandNumber bool
-	BandNumber    sql.NullString
+	BandNumber    *string
 	SetBirthDate  bool
-	BirthDate     sql.NullTime
+	BirthDate     *time.Time
 	SetSex        bool
-	Sex           sql.NullString
+	Sex           *string
 	ID            int64
 }
 
 type UpdatePigeonRow struct {
 	ID         int64
 	Name       string
-	BandNumber sql.NullString
-	BirthDate  sql.NullTime
-	Sex        sql.NullString
+	BandNumber *string
+	BirthDate  *time.Time
+	Sex        *string
 	CreatedAt  time.Time
 }
 
