@@ -8,6 +8,13 @@ SELECT *
 FROM pigeons
 WHERE id = $1;
 
+-- name: PigeonExists :one
+SELECT EXISTS (
+    SELECT 1
+    FROM pigeons
+    WHERE id = $1
+);
+
 -- name: CreatePigeon :one
 INSERT INTO pigeons (name, band_number, birth_date, sex)
 VALUES ($1, $2, $3, $4)

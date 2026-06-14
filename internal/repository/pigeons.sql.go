@@ -108,6 +108,21 @@ func (q *Queries) ListPigeons(ctx context.Context) ([]Pigeon, error) {
 	return items, nil
 }
 
+const pigeonExists = `-- name: PigeonExists :one
+SELECT EXISTS (
+    SELECT 1
+    FROM pigeons
+    WHERE id = $1
+)
+`
+
+func (q *Queries) PigeonExists(ctx context.Context, id int64) (bool, error) {
+	row := q.db.QueryRowContext(ctx, pigeonExists, id)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const updatePigeon = `-- name: UpdatePigeon :one
 UPDATE pigeons
 SET

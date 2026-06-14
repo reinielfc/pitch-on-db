@@ -16,6 +16,7 @@ type Querier interface {
 	GetPigeon(ctx context.Context, id int64) (Pigeon, error)
 	GetPigeonTags(ctx context.Context, pigeonID int64) ([]Tag, error)
 	ListPigeons(ctx context.Context) ([]Pigeon, error)
+	PigeonExists(ctx context.Context, id int64) (bool, error)
 	RemovePigeonTag(ctx context.Context, arg RemovePigeonTagParams) error
 	UpdatePigeon(ctx context.Context, arg UpdatePigeonParams) (Pigeon, error)
 	UpsertTag(ctx context.Context, name string) (Tag, error)
