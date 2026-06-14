@@ -3,7 +3,7 @@
 //   sqlc v1.31.1
 // source: pigeons.sql
 
-package repository
+package db
 
 import (
 	"context"
