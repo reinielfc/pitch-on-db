@@ -11,11 +11,13 @@ import (
 type Querier interface {
 	AddPigeonTag(ctx context.Context, arg AddPigeonTagParams) error
 	ClearPigeonTags(ctx context.Context, pigeonID int64) error
+	ClearUnusedTags(ctx context.Context) error
 	CreatePigeon(ctx context.Context, arg CreatePigeonParams) (Pigeon, error)
 	DeletePigeon(ctx context.Context, id int64) error
 	GetPigeon(ctx context.Context, id int64) (Pigeon, error)
-	GetPigeonTags(ctx context.Context, pigeonID int64) ([]Tag, error)
+	GetPigeonTags(ctx context.Context, pigeonID int64) ([]string, error)
 	ListPigeons(ctx context.Context) ([]Pigeon, error)
+	ListTags(ctx context.Context) ([]string, error)
 	PigeonExists(ctx context.Context, id int64) (bool, error)
 	RemovePigeonTag(ctx context.Context, arg RemovePigeonTagParams) error
 	UpdatePigeon(ctx context.Context, arg UpdatePigeonParams) (Pigeon, error)

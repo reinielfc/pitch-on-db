@@ -25,8 +25,7 @@ func (q *Queries) AddPigeonTag(ctx context.Context, arg AddPigeonTagParams) erro
 }
 
 const clearPigeonTags = `-- name: ClearPigeonTags :exec
-DELETE FROM pigeon_tags
-WHERE pigeon_id = $1
+DELETE FROM pigeon_tags WHERE pigeon_id = $1
 `
 
 func (q *Queries) ClearPigeonTags(ctx context.Context, pigeonID int64) error {
@@ -34,27 +33,63 @@ func (q *Queries) ClearPigeonTags(ctx context.Context, pigeonID int64) error {
 	return err
 }
 
+const clearUnusedTags = `-- name: ClearUnusedTags :exec
+DELETE FROM tags
+WHERE id NOT IN (SELECT tag_id FROM pigeon_tags)
+`
+
+func (q *Queries) ClearUnusedTags(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, clearUnusedTags)
+	return err
+}
+
 const getPigeonTags = `-- name: GetPigeonTags :many
-SELECT t.id, t.name
-FROM tags t
-JOIN pigeon_tags pt ON pt.tag_id = t.id
+SELECT t.name FROM tags t
+  JOIN pigeon_tags pt ON pt.tag_id = t.id
 WHERE pt.pigeon_id = $1
 ORDER BY t.name
 `
 
-func (q *Queries) GetPigeonTags(ctx context.Context, pigeonID int64) ([]Tag, error) {
+func (q *Queries) GetPigeonTags(ctx context.Context, pigeonID int64) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, getPigeonTags, pigeonID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Tag
+	var items []string
 	for rows.Next() {
-		var i Tag
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+		var name string
+		if err := rows.Scan(&name); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, name)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTags = `-- name: ListTags :many
+SELECT name FROM tags ORDER BY name
+`
+
+func (q *Queries) ListTags(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listTags)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		items = append(items, name)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
