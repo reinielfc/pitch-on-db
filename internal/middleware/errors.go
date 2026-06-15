@@ -1,11 +1,10 @@
 package middleware
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
-	"pitch-on-db/internal/errors"
-	"strings"
+	"pitch-on-db/internal/domain"
+	"pitch-on-db/internal/handlers"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -18,39 +17,40 @@ func ErrorHandler() gin.HandlerFunc {
 		if len(c.Errors) == 0 {
 			return
 		}
+		if c.Writer.Written() {
+			slog.Warn("error occurred but response already written",
+				"errors", c.Errors.Errors(),
+				"method", c.Request.Method,
+				"path", c.Request.URL.Path,
+			)
+			return
+		}
 
-		err := c.Errors.Last()
+		err := c.Errors.Last().Err
 
-		switch e := err.Err.(type) {
-		case *errors.AppError:
-			if e.Status >= 500 {
-				slog.Error("internal error",
-					"error", e.Cause,
-					"method", c.Request.Method,
-					"path", c.Request.URL.Path,
-				)
-			}
+		switch e := err.(type) {
+		case *domain.DomainError:
+			status := statusForKind(e.Kind)
+			c.JSON(status, gin.H{
+				"code":    http.StatusText(status),
+				"message": e.Message,
+			})
+
+		case *handlers.HttpError:
 			c.JSON(e.Status, gin.H{
 				"code":    e.Code,
 				"message": e.Message,
 			})
+
 		case validator.ValidationErrors:
-			fields := make(map[string]string, len(e))
-			for _, fe := range e {
-				fields[strings.ToLower(fe.Field())] = fe.Tag()
-			}
-			c.JSON(http.StatusBadRequest, gin.H{
-				"code":   http.StatusText(http.StatusBadRequest),
-				"fields": fields,
+			c.JSON(http.StatusUnprocessableEntity, gin.H{
+				"code":   "Validation Error",
+				"fields": formatValidationErrors(e),
 			})
-		case *json.SyntaxError, *json.UnmarshalTypeError:
-			c.JSON(http.StatusBadRequest, gin.H{
-				"code":    http.StatusText(http.StatusBadRequest),
-				"message": "invalid request body",
-			})
+
 		default:
 			slog.Error("unhandled error",
-				"error", err.Err,
+				"error", err,
 				"method", c.Request.Method,
 				"path", c.Request.URL.Path,
 			)
@@ -59,5 +59,22 @@ func ErrorHandler() gin.HandlerFunc {
 				"message": "something went wrong",
 			})
 		}
+	}
+}
+
+func statusForKind(kind domain.ErrorKind) int {
+	switch kind {
+	case domain.KindNotFound:
+		return http.StatusNotFound
+	case domain.KindConflict:
+		return http.StatusConflict
+	case domain.KindInvalid:
+		return http.StatusBadRequest
+	case domain.KindUnauthorized:
+		return http.StatusUnauthorized
+	case domain.KindForbidden:
+		return http.StatusForbidden
+	default:
+		return http.StatusInternalServerError
 	}
 }
