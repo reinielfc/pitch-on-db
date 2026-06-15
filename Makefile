@@ -9,6 +9,12 @@ GOOSE	 := $(gobin)/goose
 -include .env
 export
 
+POSTGRES_USER ?= pitchondb
+POSTGRES_PASSWORD ?= pitchondb
+POSTGRES_PORT ?= 5432
+POSTGRES_DB ?= pitchondb
+POSTGRES_SSLMODE ?= disable
+
 DATABASE_URL ?= "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=$(POSTGRES_SSLMODE)"
 
 .PHONY: setup generate build migrate run docker-up docker-down clean
