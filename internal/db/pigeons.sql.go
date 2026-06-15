@@ -3,7 +3,7 @@
 //   sqlc v1.31.1
 // source: pigeons.sql
 
-package repository
+package db
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 const createPigeon = `-- name: CreatePigeon :one
 INSERT INTO pigeons (name, band_number, birth_date, sex)
 VALUES ($1, $2, $3, $4)
-RETURNING id, name, band_number, birth_date, sex, created_at
+RETURNING id, name, created_at, band_number, birth_date, sex
 `
 
 type CreatePigeonParams struct {
@@ -23,37 +23,27 @@ type CreatePigeonParams struct {
 	Sex        *string
 }
 
-type CreatePigeonRow struct {
-	ID         int64
-	Name       string
-	BandNumber *string
-	BirthDate  *time.Time
-	Sex        *string
-	CreatedAt  time.Time
-}
-
-func (q *Queries) CreatePigeon(ctx context.Context, arg CreatePigeonParams) (CreatePigeonRow, error) {
+func (q *Queries) CreatePigeon(ctx context.Context, arg CreatePigeonParams) (Pigeon, error) {
 	row := q.db.QueryRowContext(ctx, createPigeon,
 		arg.Name,
 		arg.BandNumber,
 		arg.BirthDate,
 		arg.Sex,
 	)
-	var i CreatePigeonRow
+	var i Pigeon
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.CreatedAt,
 		&i.BandNumber,
 		&i.BirthDate,
 		&i.Sex,
-		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const deletePigeon = `-- name: DeletePigeon :exec
-DELETE FROM pigeons
-WHERE id = $1
+DELETE FROM pigeons WHERE id = $1
 `
 
 func (q *Queries) DeletePigeon(ctx context.Context, id int64) error {
@@ -62,65 +52,43 @@ func (q *Queries) DeletePigeon(ctx context.Context, id int64) error {
 }
 
 const getPigeon = `-- name: GetPigeon :one
-SELECT id, name, band_number, birth_date, sex, created_at
-FROM pigeons
-WHERE id = $1
+SELECT id, name, created_at, band_number, birth_date, sex FROM pigeons WHERE id = $1
 `
 
-type GetPigeonRow struct {
-	ID         int64
-	Name       string
-	BandNumber *string
-	BirthDate  *time.Time
-	Sex        *string
-	CreatedAt  time.Time
-}
-
-func (q *Queries) GetPigeon(ctx context.Context, id int64) (GetPigeonRow, error) {
+func (q *Queries) GetPigeon(ctx context.Context, id int64) (Pigeon, error) {
 	row := q.db.QueryRowContext(ctx, getPigeon, id)
-	var i GetPigeonRow
+	var i Pigeon
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.CreatedAt,
 		&i.BandNumber,
 		&i.BirthDate,
 		&i.Sex,
-		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listPigeons = `-- name: ListPigeons :many
-SELECT id, name, band_number, birth_date, sex, created_at
-FROM pigeons
-ORDER BY id
+SELECT id, name, created_at, band_number, birth_date, sex FROM pigeons ORDER BY id
 `
 
-type ListPigeonsRow struct {
-	ID         int64
-	Name       string
-	BandNumber *string
-	BirthDate  *time.Time
-	Sex        *string
-	CreatedAt  time.Time
-}
-
-func (q *Queries) ListPigeons(ctx context.Context) ([]ListPigeonsRow, error) {
+func (q *Queries) ListPigeons(ctx context.Context) ([]Pigeon, error) {
 	rows, err := q.db.QueryContext(ctx, listPigeons)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListPigeonsRow
+	var items []Pigeon
 	for rows.Next() {
-		var i ListPigeonsRow
+		var i Pigeon
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
+			&i.CreatedAt,
 			&i.BandNumber,
 			&i.BirthDate,
 			&i.Sex,
-			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -135,6 +103,21 @@ func (q *Queries) ListPigeons(ctx context.Context) ([]ListPigeonsRow, error) {
 	return items, nil
 }
 
+const pigeonExists = `-- name: PigeonExists :one
+SELECT EXISTS (
+    SELECT 1
+    FROM pigeons
+    WHERE id = $1
+)
+`
+
+func (q *Queries) PigeonExists(ctx context.Context, id int64) (bool, error) {
+	row := q.db.QueryRowContext(ctx, pigeonExists, id)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const updatePigeon = `-- name: UpdatePigeon :one
 UPDATE pigeons
 SET
@@ -143,7 +126,7 @@ SET
     birth_date  = CASE WHEN $4::bool THEN $5 ELSE birth_date END,
     sex         = CASE WHEN $6::bool THEN $7 ELSE sex END
 WHERE id = $8
-RETURNING id, name, band_number, birth_date, sex, created_at
+RETURNING id, name, created_at, band_number, birth_date, sex
 `
 
 type UpdatePigeonParams struct {
@@ -157,16 +140,7 @@ type UpdatePigeonParams struct {
 	ID            int64
 }
 
-type UpdatePigeonRow struct {
-	ID         int64
-	Name       string
-	BandNumber *string
-	BirthDate  *time.Time
-	Sex        *string
-	CreatedAt  time.Time
-}
-
-func (q *Queries) UpdatePigeon(ctx context.Context, arg UpdatePigeonParams) (UpdatePigeonRow, error) {
+func (q *Queries) UpdatePigeon(ctx context.Context, arg UpdatePigeonParams) (Pigeon, error) {
 	row := q.db.QueryRowContext(ctx, updatePigeon,
 		arg.Name,
 		arg.SetBandNumber,
@@ -177,14 +151,14 @@ func (q *Queries) UpdatePigeon(ctx context.Context, arg UpdatePigeonParams) (Upd
 		arg.Sex,
 		arg.ID,
 	)
-	var i UpdatePigeonRow
+	var i Pigeon
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.CreatedAt,
 		&i.BandNumber,
 		&i.BirthDate,
 		&i.Sex,
-		&i.CreatedAt,
 	)
 	return i, err
 }
