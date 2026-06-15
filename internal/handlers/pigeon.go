@@ -1,30 +1,27 @@
 package handlers
 
 import (
-	"database/sql"
 	"net/http"
 	"time"
 
-	"pitch-on-db/internal/repository"
-
-	appErr "pitch-on-db/internal/errors"
+	"pitch-on-db/internal/domain"
+	"pitch-on-db/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
 
 type PigeonHandler struct {
-	db *sql.DB
-	q  *repository.Queries
+	svc services.PigeonService
 }
 
-func NewPigeonHandler(db *sql.DB) *PigeonHandler {
-	return &PigeonHandler{db: db, q: repository.New(db)}
+func NewPigeonHandler(svc services.PigeonService) *PigeonHandler {
+	return &PigeonHandler{svc: svc}
 }
 
 func (h *PigeonHandler) List(c *gin.Context) {
-	pigeons, err := h.q.ListPigeons(c.Request.Context())
+	pigeons, err := h.svc.List(c.Request.Context())
 	if err != nil {
-		c.Error(appErr.DBResource("pigeon", err))
+		c.Error(err)
 		return
 	}
 
@@ -33,7 +30,7 @@ func (h *PigeonHandler) List(c *gin.Context) {
 		resp[i] = toResponse(p)
 	}
 
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, gin.H{"pigeons": resp})
 }
 
 func (h *PigeonHandler) Get(c *gin.Context) {
@@ -42,13 +39,13 @@ func (h *PigeonHandler) Get(c *gin.Context) {
 		return
 	}
 
-	pigeon, err := h.q.GetPigeon(c.Request.Context(), id)
+	pigeon, err := h.svc.Get(c.Request.Context(), id)
 	if err != nil {
-		c.Error(appErr.DBResource("pigeon", err))
+		c.Error(err)
 		return
 	}
 
-	c.JSON(http.StatusOK, toResponse(pigeon))
+	c.JSON(http.StatusOK, toResponse(*pigeon))
 }
 
 func (h *PigeonHandler) Create(c *gin.Context) {
@@ -63,14 +60,14 @@ func (h *PigeonHandler) Create(c *gin.Context) {
 		return
 	}
 
-	pigeon, err := h.q.CreatePigeon(c.Request.Context(), repository.CreatePigeonParams{
+	pigeon, err := h.svc.Create(c.Request.Context(), domain.Pigeon{
 		Name:       req.Name,
 		BandNumber: req.BandNumber,
 		BirthDate:  req.BirthDate,
 		Sex:        req.Sex,
 	})
 	if err != nil {
-		c.Error(appErr.DBResource("pigeon", err))
+		c.Error(err)
 		return
 	}
 
@@ -94,18 +91,14 @@ func (h *PigeonHandler) Update(c *gin.Context) {
 		return
 	}
 
-	pigeon, err := h.q.UpdatePigeon(c.Request.Context(), repository.UpdatePigeonParams{
-		ID:            id,
-		Name:          req.Name,
-		SetBandNumber: req.BandNumber != nil,
-		BandNumber:    req.BandNumber,
-		SetBirthDate:  req.BirthDate != nil,
-		BirthDate:     req.BirthDate,
-		SetSex:        req.Sex != nil,
-		Sex:           req.Sex,
+	pigeon, err := h.svc.Update(c.Request.Context(), id, domain.PigeonPatch{
+		Name:       req.Name,
+		BandNumber: req.BandNumber,
+		BirthDate:  req.BirthDate,
+		Sex:        req.Sex,
 	})
 	if err != nil {
-		c.Error(appErr.DBResource("pigeon", err))
+		c.Error(err)
 		return
 	}
 
@@ -118,12 +111,49 @@ func (h *PigeonHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.q.DeletePigeon(c.Request.Context(), id); err != nil {
-		c.Error(appErr.DBResource("pigeon", err))
+	if err := h.svc.Delete(c.Request.Context(), id); err != nil {
+		c.Error(err)
 		return
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+func (h *PigeonHandler) GetTags(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+
+	tags, err := h.svc.GetTags(c.Request.Context(), id)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"tags": tags})
+}
+
+func (h *PigeonHandler) SetTags(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+
+	var req struct {
+		Tags []string `json:"tags" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.Error(err)
+		return
+	}
+
+	if err := h.svc.SetTags(c.Request.Context(), id, req.Tags); err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"tags": req.Tags})
 }
 
 type pigeonResponse struct {
@@ -135,7 +165,7 @@ type pigeonResponse struct {
 	CreatedAt  time.Time  `json:"created_at"`
 }
 
-func toResponse(p repository.Pigeon) pigeonResponse {
+func toResponse(p domain.Pigeon) pigeonResponse {
 	return pigeonResponse{
 		ID:         p.ID,
 		Name:       p.Name,
