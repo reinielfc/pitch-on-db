@@ -1,12 +1,8 @@
 -- name: ListPigeons :many
-SELECT *
-FROM pigeons
-ORDER BY id;
+SELECT * FROM pigeons ORDER BY id;
 
 -- name: GetPigeon :one
-SELECT *
-FROM pigeons
-WHERE id = $1;
+SELECT * FROM pigeons WHERE id = $1;
 
 -- name: PigeonExists :one
 SELECT EXISTS (
@@ -31,5 +27,4 @@ WHERE id = sqlc.arg('id')
 RETURNING *;
 
 -- name: DeletePigeon :exec
-DELETE FROM pigeons
-WHERE id = $1;
+DELETE FROM pigeons WHERE id = $1;

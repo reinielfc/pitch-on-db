@@ -43,8 +43,7 @@ func (q *Queries) CreatePigeon(ctx context.Context, arg CreatePigeonParams) (Pig
 }
 
 const deletePigeon = `-- name: DeletePigeon :exec
-DELETE FROM pigeons
-WHERE id = $1
+DELETE FROM pigeons WHERE id = $1
 `
 
 func (q *Queries) DeletePigeon(ctx context.Context, id int64) error {
@@ -53,9 +52,7 @@ func (q *Queries) DeletePigeon(ctx context.Context, id int64) error {
 }
 
 const getPigeon = `-- name: GetPigeon :one
-SELECT id, name, created_at, band_number, birth_date, sex
-FROM pigeons
-WHERE id = $1
+SELECT id, name, created_at, band_number, birth_date, sex FROM pigeons WHERE id = $1
 `
 
 func (q *Queries) GetPigeon(ctx context.Context, id int64) (Pigeon, error) {
@@ -73,9 +70,7 @@ func (q *Queries) GetPigeon(ctx context.Context, id int64) (Pigeon, error) {
 }
 
 const listPigeons = `-- name: ListPigeons :many
-SELECT id, name, created_at, band_number, birth_date, sex
-FROM pigeons
-ORDER BY id
+SELECT id, name, created_at, band_number, birth_date, sex FROM pigeons ORDER BY id
 `
 
 func (q *Queries) ListPigeons(ctx context.Context) ([]Pigeon, error) {
