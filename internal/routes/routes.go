@@ -25,19 +25,23 @@ func Register(r *gin.Engine, deps *Dependencies) {
 func registerPigeonRoutes(r *gin.Engine, deps *Dependencies) {
 	ph := handlers.NewPigeonHandler(deps.PigeonService)
 
-	pigeonsGroup := r.Group("/pigeons")
+	pigeons := r.Group("/pigeons")
 	{
-		pigeonsGroup.GET("", ph.List)
-		pigeonsGroup.POST("", ph.Create)
+		pigeons.GET("", ph.ListAll)
+		pigeons.POST("", ph.Create)
 
-		pigeonsGroup.GET("/:id", ph.Get)
-		pigeonsGroup.PATCH("/:id", ph.Update)
-		pigeonsGroup.DELETE("/:id", ph.Delete)
-
-		tagsGroup := pigeonsGroup.Group("/:id/tags")
+		pigeon := pigeons.Group("/:id")
 		{
-			tagsGroup.GET("", ph.GetTags)
-			tagsGroup.PUT("", ph.SetTags)
+			pigeon.GET("", ph.Get)
+			pigeon.PATCH("", ph.Update)
+			pigeon.DELETE("", ph.Delete)
+
+			pigeon.GET("/tags", ph.GetTags)
+			pigeon.PUT("/tags", ph.SetTags)
+
+			pigeon.GET("/parents", ph.GetParents)
+			pigeon.GET("/children", ph.GetChildren)
+			pigeon.PUT("/children/:childID", ph.AssignChild)
 		}
 	}
 }
