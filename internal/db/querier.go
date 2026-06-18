@@ -6,20 +6,30 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 type Querier interface {
 	AddPigeonTag(ctx context.Context, arg AddPigeonTagParams) error
+	CheckPigeonExists(ctx context.Context, id int64) (bool, error)
+	CheckPigeonHasChildrenAsFather(ctx context.Context, fatherID sql.NullInt64) (bool, error)
+	CheckPigeonHasChildrenAsMother(ctx context.Context, motherID sql.NullInt64) (bool, error)
 	ClearPigeonTags(ctx context.Context, pigeonID int64) error
 	ClearUnusedTags(ctx context.Context) error
 	CreatePigeon(ctx context.Context, arg CreatePigeonParams) (Pigeon, error)
 	DeletePigeon(ctx context.Context, id int64) error
 	GetPigeon(ctx context.Context, id int64) (Pigeon, error)
+	GetPigeonChildrenAsFather(ctx context.Context, id int64) ([]Pigeon, error)
+	GetPigeonChildrenAsMother(ctx context.Context, id int64) ([]Pigeon, error)
+	GetPigeonFather(ctx context.Context, id int64) (Pigeon, error)
+	GetPigeonMother(ctx context.Context, id int64) (Pigeon, error)
+	GetPigeonSex(ctx context.Context, id int64) (*string, error)
 	GetPigeonTags(ctx context.Context, pigeonID int64) ([]string, error)
 	ListPigeons(ctx context.Context) ([]Pigeon, error)
 	ListTags(ctx context.Context) ([]string, error)
-	PigeonExists(ctx context.Context, id int64) (bool, error)
 	RemovePigeonTag(ctx context.Context, arg RemovePigeonTagParams) error
+	SetPigeonFather(ctx context.Context, arg SetPigeonFatherParams) error
+	SetPigeonMother(ctx context.Context, arg SetPigeonMotherParams) error
 	UpdatePigeon(ctx context.Context, arg UpdatePigeonParams) (Pigeon, error)
 	UpsertTag(ctx context.Context, name string) (Tag, error)
 }

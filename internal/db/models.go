@@ -5,6 +5,7 @@
 package db
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -15,6 +16,8 @@ type Pigeon struct {
 	BandNumber *string
 	BirthDate  *time.Time
 	Sex        *string
+	FatherID   sql.NullInt64
+	MotherID   sql.NullInt64
 }
 
 type PigeonTag struct {
