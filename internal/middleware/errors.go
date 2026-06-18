@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"net/http"
 	"pitch-on-db/internal/domain"
-	"pitch-on-db/internal/handlers"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -33,12 +32,6 @@ func ErrorHandler() gin.HandlerFunc {
 			status := statusForKind(e.Kind)
 			c.JSON(status, gin.H{
 				"code":    http.StatusText(status),
-				"message": e.Message,
-			})
-
-		case *handlers.HttpError:
-			c.JSON(e.Status, gin.H{
-				"code":    e.Code,
 				"message": e.Message,
 			})
 
