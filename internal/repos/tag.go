@@ -33,26 +33,35 @@ func (r *tagRepository) ClearUnusedTags(ctx context.Context) error {
 }
 
 func (r *tagRepository) GetPigeonTags(ctx context.Context, pigeonID int64) ([]string, error) {
-	return r.queries.GetPigeonTags(ctx, pigeonID)
+	row, err := r.queries.GetPigeonTags(ctx, pigeonID)
+	if err != nil {
+		return nil, err
+	}
+	if row == nil {
+		return []string{}, nil
+	}
+	return row, nil
 }
 
 func (r *tagRepository) SetPigeonTags(ctx context.Context, pigeonID int64, tags []string) error {
+	desc := fmt.Sprintf("set tags for pigeon %d", pigeonID)
+
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s: begin transaction: %w", desc, err)
 	}
 	defer tx.Rollback()
 
-	q := db.New(tx)
+	q := r.queries.WithTx(tx)
 
 	if err = q.ClearPigeonTags(ctx, pigeonID); err != nil {
-		return fmt.Errorf("clear tags for pigeon %d: %w", pigeonID, err)
+		return fmt.Errorf("%s: clear existing tags: %w", desc, err)
 	}
 
 	for _, tag := range tags {
 		row, err := q.UpsertTag(ctx, tag)
 		if err != nil {
-			return err
+			return fmt.Errorf("%s: upsert tag '%s': %w", desc, tag, err)
 		}
 
 		err = q.AddPigeonTag(ctx, db.AddPigeonTagParams{
@@ -60,9 +69,12 @@ func (r *tagRepository) SetPigeonTags(ctx context.Context, pigeonID int64, tags 
 			TagID:    row.ID,
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("%s: add tag '%s' to pigeon: %w", desc, tag, err)
 		}
 	}
 
-	return tx.Commit()
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("%s: commit transaction: %w", desc, err)
+	}
+	return nil
 }

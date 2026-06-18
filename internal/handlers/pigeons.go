@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"errors"
+	"io"
 	"net/http"
 	"time"
 
@@ -18,8 +20,39 @@ func NewPigeonHandler(svc services.PigeonService) *PigeonHandler {
 	return &PigeonHandler{svc: svc}
 }
 
-func (h *PigeonHandler) List(c *gin.Context) {
-	pigeons, err := h.svc.List(c.Request.Context())
+func (h *PigeonHandler) Create(c *gin.Context) {
+	var req struct {
+		Name       string     `json:"name" binding:"required"`
+		BandNumber *string    `json:"band_number"`
+		BirthDate  *time.Time `json:"birth_date"`
+		Sex        *string    `json:"sex"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.Error(err)
+		return
+	}
+
+	sex, ok := parseSex(c, req.Sex)
+	if !ok {
+		return
+	}
+
+	pigeon, err := h.svc.Create(c.Request.Context(), domain.Pigeon{
+		Name:       req.Name,
+		BandNumber: req.BandNumber,
+		BirthDate:  req.BirthDate,
+		Sex:        sex,
+	})
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, toResponse(pigeon))
+}
+
+func (h *PigeonHandler) ListAll(c *gin.Context) {
+	pigeons, err := h.svc.ListAll(c.Request.Context())
 	if err != nil {
 		c.Error(err)
 		return
@@ -34,7 +67,7 @@ func (h *PigeonHandler) List(c *gin.Context) {
 }
 
 func (h *PigeonHandler) Get(c *gin.Context) {
-	id, ok := parseID(c)
+	id, ok := parseParamID(c)
 	if !ok {
 		return
 	}
@@ -48,34 +81,8 @@ func (h *PigeonHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, toResponse(*pigeon))
 }
 
-func (h *PigeonHandler) Create(c *gin.Context) {
-	var req struct {
-		Name       string     `json:"name" binding:"required"`
-		BandNumber *string    `json:"band_number"`
-		BirthDate  *time.Time `json:"birth_date"`
-		Sex        *string    `json:"sex"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(err)
-		return
-	}
-
-	pigeon, err := h.svc.Create(c.Request.Context(), domain.Pigeon{
-		Name:       req.Name,
-		BandNumber: req.BandNumber,
-		BirthDate:  req.BirthDate,
-		Sex:        req.Sex,
-	})
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	c.JSON(http.StatusCreated, toResponse(pigeon))
-}
-
 func (h *PigeonHandler) Update(c *gin.Context) {
-	id, ok := parseID(c)
+	id, ok := parseParamID(c)
 	if !ok {
 		return
 	}
@@ -86,8 +93,13 @@ func (h *PigeonHandler) Update(c *gin.Context) {
 		BirthDate  *time.Time `json:"birth_date"`
 		Sex        *string    `json:"sex"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		c.Error(err)
+		return
+	}
+
+	sex, ok := parseSex(c, req.Sex)
+	if !ok {
 		return
 	}
 
@@ -95,7 +107,7 @@ func (h *PigeonHandler) Update(c *gin.Context) {
 		Name:       req.Name,
 		BandNumber: req.BandNumber,
 		BirthDate:  req.BirthDate,
-		Sex:        req.Sex,
+		Sex:        sex,
 	})
 	if err != nil {
 		c.Error(err)
@@ -106,7 +118,7 @@ func (h *PigeonHandler) Update(c *gin.Context) {
 }
 
 func (h *PigeonHandler) Delete(c *gin.Context) {
-	id, ok := parseID(c)
+	id, ok := parseParamID(c)
 	if !ok {
 		return
 	}
@@ -120,7 +132,7 @@ func (h *PigeonHandler) Delete(c *gin.Context) {
 }
 
 func (h *PigeonHandler) GetTags(c *gin.Context) {
-	id, ok := parseID(c)
+	id, ok := parseParamID(c)
 	if !ok {
 		return
 	}
@@ -135,7 +147,7 @@ func (h *PigeonHandler) GetTags(c *gin.Context) {
 }
 
 func (h *PigeonHandler) SetTags(c *gin.Context) {
-	id, ok := parseID(c)
+	id, ok := parseParamID(c)
 	if !ok {
 		return
 	}
@@ -156,6 +168,55 @@ func (h *PigeonHandler) SetTags(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"tags": req.Tags})
 }
 
+func (h *PigeonHandler) GetParents(c *gin.Context) {
+	id, ok := parseParamID(c)
+	if !ok {
+		return
+	}
+
+	parents, err := h.svc.GetParents(c.Request.Context(), id)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, parents)
+}
+
+func (h *PigeonHandler) GetChildren(c *gin.Context) {
+	id, ok := parseParamID(c)
+	if !ok {
+		return
+	}
+
+	children, err := h.svc.GetChildren(c.Request.Context(), id)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"children": mapToResponses(children)})
+}
+
+func (h *PigeonHandler) AssignChild(c *gin.Context) {
+	id, ok := parseParamID(c)
+	if !ok {
+		return
+	}
+
+	childID, ok := parseParamAsID(c, "childID")
+	if !ok {
+		return
+	}
+
+	if err := h.svc.AssignChild(c.Request.Context(), id, childID); err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 type pigeonResponse struct {
 	ID         int64      `json:"id"`
 	Name       string     `json:"name"`
@@ -171,7 +232,27 @@ func toResponse(p domain.Pigeon) pigeonResponse {
 		Name:       p.Name,
 		BandNumber: p.BandNumber,
 		BirthDate:  p.BirthDate,
-		Sex:        p.Sex,
+		Sex:        (*string)(p.Sex),
 		CreatedAt:  p.CreatedAt,
 	}
+}
+
+func mapToResponses(ps []domain.Pigeon) []pigeonResponse {
+	resps := make([]pigeonResponse, len(ps))
+	for i, p := range ps {
+		resps[i] = toResponse(p)
+	}
+	return resps
+}
+
+func parseSex(c *gin.Context, s *string) (*domain.Sex, bool) {
+	if s == nil {
+		return nil, true
+	}
+	sex, err := domain.ParseSex(*s)
+	if err != nil {
+		c.Error(err)
+		return nil, false
+	}
+	return &sex, true
 }
