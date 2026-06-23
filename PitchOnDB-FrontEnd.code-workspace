@@ -1,0 +1,41 @@
+{
+    "folders": [
+        { "name": "Source", "path": "apps/web/src" },
+        { "name": "Web",  "path": "apps/web" },
+        { "name": "Root", "path": "." },
+    ],
+    "extensions": {
+        "recommendations": ["svelte.svelte-vscode"]
+    },
+    "settings": {
+        "files.exclude": {
+            ".svelte-kit": true,
+            "apps": true,
+            "database": true,
+            "node_modules": true,
+            "src": true,
+        },
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "type": "chrome",
+                "request": "launch",
+                "name": "Debug: Web (Chrome)",
+                "url": "http://localhost:5173",
+                "webRoot": "${workspaceFolder:Web}",
+                "sourceMapPathOverrides": {
+                    "/@fs/*": "/*"
+                }
+            }
+        ],
+        "compounds": []
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+
+        ]
+    }
+}
