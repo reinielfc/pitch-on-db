@@ -1,4 +1,4 @@
-module pitch-on-db
+module github.com/reinielfc/pitch-on-db/apps/api
 
 go 1.26.0
 

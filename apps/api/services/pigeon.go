@@ -2,8 +2,9 @@ package services
 
 import (
 	"context"
-	"pitch-on-db/domain"
-	"pitch-on-db/repos"
+
+	"github.com/reinielfc/pitch-on-db/apps/api/domain"
+	"github.com/reinielfc/pitch-on-db/apps/api/repos"
 )
 
 type PigeonService interface {

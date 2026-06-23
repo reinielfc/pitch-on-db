@@ -3,13 +3,13 @@ package main
 import (
 	"log"
 
-	"pitch-on-db/config"
-	"pitch-on-db/db"
-	"pitch-on-db/logging"
-	"pitch-on-db/middleware"
-	"pitch-on-db/repos"
-	"pitch-on-db/routes"
-	"pitch-on-db/services"
+	"github.com/reinielfc/pitch-on-db/apps/api/config"
+	"github.com/reinielfc/pitch-on-db/apps/api/db"
+	"github.com/reinielfc/pitch-on-db/apps/api/logging"
+	"github.com/reinielfc/pitch-on-db/apps/api/middleware"
+	"github.com/reinielfc/pitch-on-db/apps/api/repos"
+	"github.com/reinielfc/pitch-on-db/apps/api/routes"
+	"github.com/reinielfc/pitch-on-db/apps/api/services"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/jackc/pgx/v5/stdlib"

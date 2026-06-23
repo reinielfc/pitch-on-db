@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"pitch-on-db/db"
-	"pitch-on-db/domain"
+	"github.com/reinielfc/pitch-on-db/apps/api/db"
+	"github.com/reinielfc/pitch-on-db/apps/api/domain"
 )
 
 type PigeonRepository interface {

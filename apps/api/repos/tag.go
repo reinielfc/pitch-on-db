@@ -4,7 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"pitch-on-db/db"
+
+	"github.com/reinielfc/pitch-on-db/apps/api/db"
 )
 
 type TagRepository interface {

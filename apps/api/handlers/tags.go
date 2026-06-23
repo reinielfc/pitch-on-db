@@ -2,7 +2,8 @@ package handlers
 
 import (
 	"net/http"
-	"pitch-on-db/services"
+
+	"github.com/reinielfc/pitch-on-db/apps/api/services"
 
 	"github.com/gin-gonic/gin"
 )

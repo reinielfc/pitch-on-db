@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"pitch-on-db/domain"
-	"pitch-on-db/services"
-	"pitch-on-db/services/mocks"
+	"github.com/reinielfc/pitch-on-db/apps/api/domain"
+	"github.com/reinielfc/pitch-on-db/apps/api/services"
+	"github.com/reinielfc/pitch-on-db/apps/api/services/mocks"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

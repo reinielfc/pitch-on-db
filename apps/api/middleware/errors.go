@@ -3,7 +3,8 @@ package middleware
 import (
 	"log/slog"
 	"net/http"
-	"pitch-on-db/domain"
+
+	"github.com/reinielfc/pitch-on-db/apps/api/domain"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"

@@ -4,7 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
-	"pitch-on-db/config"
+
+	"github.com/reinielfc/pitch-on-db/apps/api/config"
 )
 
 func Connect(cfg config.PostgresConfig) (*sql.DB, error) {
