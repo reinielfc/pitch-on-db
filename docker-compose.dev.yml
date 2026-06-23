@@ -9,6 +9,22 @@ services:
         loki-retries: "3"
         loki-timeout: "2s"
     networks: [ default, monitoring ]
+    develop:
+      watch:
+        - action: rebuild
+          path: ./apps/api
+
+
+  postgres:
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+        loki-batch-wait: "500ms"
+        loki-batch-size: "1048576" # 1MB
+        loki-retries: "3"
+        loki-timeout: "2s"
+    networks: [ default, monitoring ]
 
   loki:
     image: grafana/loki:latest
@@ -32,7 +48,7 @@ services:
     networks: [ monitoring ]
 
 configs:
-  loki-datasource: { file: .docker/loki-datasource.yml }
+  loki-datasource: { file: infra/grafana/loki-datasource.yml }
 
 networks:
   monitoring: { driver: bridge }
