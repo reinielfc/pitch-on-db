@@ -6,7 +6,7 @@ disable-version-string: true
 issue-845-fix: true
 
 packages:
-  pitch-on-db/repos:
+  github.com/reinielfc/pitch-on-db/apps/api/repos:
     config:
       all: true
       dir: services/mocks
