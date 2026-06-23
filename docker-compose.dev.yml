@@ -1,0 +1,83 @@
+services:
+  api:
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+        loki-batch-wait: "500ms"
+        loki-batch-size: "1048576" # 1MB
+        loki-retries: "3"
+        loki-timeout: "2s"
+    networks: [ default, monitoring ]
+    develop:
+      watch:
+        - action: rebuild
+          path: ./apps/api
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: dev
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+        loki-batch-wait: "500ms"
+        loki-batch-size: "1048576" # 1MB
+        loki-retries: "3"
+        loki-timeout: "2s"
+    networks: [ default, monitoring ] 
+    ports: [ 5173:5173 ]
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/web/src
+          target: /app/src
+        - action: sync+restart
+          path: ./apps/web/vite.config.ts
+          target: /app/vite.config.ts
+        - action: rebuild
+          path: ./apps/web/package.json
+
+  postgres:
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+        loki-batch-wait: "500ms"
+        loki-batch-size: "1048576" # 1MB
+        loki-retries: "3"
+        loki-timeout: "2s"
+    networks: [ default, monitoring ]
+
+  loki:
+    image: grafana/loki:latest
+    ports: [ 3100:3100 ]
+    volumes: [ loki-data:/loki ]
+    networks: [ monitoring ]
+    command: -config.file=/etc/loki/local-config.yaml -limits.volume-enabled=true
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: on-failure
+    depends_on: [ loki ]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: grafana
+    configs:
+      - source: loki-datasource
+        target: /etc/grafana/provisioning/datasources/loki.yaml
+    ports: [ "${GRAFANA_PORT:-3000}:3000" ]
+    volumes: [ grafana-data:/var/lib/grafana ]
+    networks: [ monitoring ]
+
+configs:
+  loki-datasource: { file: infra/grafana/loki-datasource.yml }
+
+networks:
+  monitoring: { driver: bridge }
+
+volumes:
+  loki-data:
+  grafana-data:

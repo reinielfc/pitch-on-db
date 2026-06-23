@@ -1,0 +1,13 @@
+with-expecter: true
+filename: "{{.InterfaceName}}.go"
+mockname: "{{.InterfaceName}}"
+resolve-type-alias: false
+disable-version-string: true
+issue-845-fix: true
+
+packages:
+  github.com/reinielfc/pitch-on-db/apps/api/repos:
+    config:
+      all: true
+      dir: services/mocks
+      outpkg: mocks

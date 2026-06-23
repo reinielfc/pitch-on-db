@@ -2,7 +2,9 @@ name: pitch-on-db
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
     restart: on-failure
     depends_on: [ postgres ]
     environment:
@@ -13,7 +15,16 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pitchondb}
       POSTGRES_DB: ${POSTGRES_DB:-pitchondb}
       POSTGRES_SSLMODE: ${POSTGRES_SSLMODE:-disable}
-    ports: [ 8080:8080 ]
+    expose: [ 8080 ]
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runner
+    restart: on-failure
+    depends_on: [ api ]
+    ports: [ 80:80 ]
 
   postgres:
     image: postgres:16-alpine
@@ -23,6 +34,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-pitchondb}
     ports: [ "${POSTGRES_PORT:-5432}:5432" ]
     volumes: [ pgdata:/var/lib/postgresql/data ]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pitchondb}"]
+      interval: 5s
+      retries: 5
 
 volumes:
   pgdata:

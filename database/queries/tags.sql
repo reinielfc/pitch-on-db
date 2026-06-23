@@ -1,14 +1,14 @@
 -- name: ListTags :many
 SELECT name FROM tags ORDER BY name;
 
--- name: ClearUnusedTags :exec
-DELETE FROM tags
-WHERE id NOT IN (SELECT tag_id FROM pigeon_tags);
-
 -- name: UpsertTag :one
 INSERT INTO tags (name) VALUES ($1)
 ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
 RETURNING id, name;
+
+-- name: ClearUnusedTags :exec
+DELETE FROM tags
+WHERE id NOT IN (SELECT tag_id FROM pigeon_tags);
 
 -- name: GetPigeonTags :many
 SELECT t.name FROM tags t
