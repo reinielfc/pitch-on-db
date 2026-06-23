@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"strconv"
+	"time"
+)
 
 type Pigeon struct {
 	ID         int64      `json:"id"`
@@ -9,6 +12,17 @@ type Pigeon struct {
 	BandNumber *string    `json:"band_number,omitempty"`
 	BirthDate  *time.Time `json:"birth_date,omitempty"`
 	Sex        *Sex       `json:"sex,omitempty"`
+}
+
+func ParseID(id string) (int64, error) {
+	parsedID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return 0, NewValidationError(
+			WithMsg("invalid ID: %s", id),
+			WithCtx("value", id),
+		)
+	}
+	return parsedID, nil
 }
 
 type Sex string
@@ -25,7 +39,10 @@ func (s Sex) IsValid() bool {
 func ParseSex(s string) (Sex, error) {
 	sex := Sex(s)
 	if !sex.IsValid() {
-		return "", ErrInvalid("invalid sex value '%s'", s)
+		return "", NewValidationError(
+			WithMsg("invalid sex value: %s", s),
+			WithCtx("value", s),
+		)
 	}
 	return sex, nil
 }

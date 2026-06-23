@@ -1,17 +1,14 @@
 package handlers
 
 import (
-	"strconv"
-
-	"github.com/reinielfc/pitch-on-db/apps/api/domain"
-
 	"github.com/gin-gonic/gin"
+	"github.com/reinielfc/pitch-on-db/apps/api/domain"
 )
 
 func parseID(c *gin.Context, id string) (int64, bool) {
-	parsedID, err := strconv.ParseInt(id, 10, 64)
+	parsedID, err := domain.ParseID(id)
 	if err != nil {
-		c.Error(domain.ErrInvalid("invalid ID: %s", id))
+		c.Error(err)
 		return 0, false
 	}
 	return parsedID, true

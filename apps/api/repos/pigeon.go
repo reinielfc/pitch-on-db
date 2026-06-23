@@ -93,7 +93,7 @@ func (r *pigeonRepository) Update(ctx context.Context, id int64, patch domain.Pi
 		Sex:    (*string)(patch.Sex),
 	})
 	if errors.Is(err, sql.ErrNoRows) {
-		return domain.Pigeon{}, domain.ErrNotFound("pigeon by id %d", id)
+		return domain.Pigeon{}, fmt.Errorf("pigeon with id %d not found: %w", id, err)
 	}
 	if err != nil {
 		return domain.Pigeon{}, fmt.Errorf("update pigeon %d: %w", id, err)
@@ -188,7 +188,7 @@ func (r *pigeonRepository) ResolveParentHandle(ctx context.Context, id int64) (P
 		return nil, err
 	}
 	if sex == nil {
-		return nil, domain.ErrInvalid("parent pigeon %d has no sex set", id)
+		return nil, fmt.Errorf("parent pigeon %d has no sex set", id)
 	}
 
 	switch *sex {
@@ -197,14 +197,14 @@ func (r *pigeonRepository) ResolveParentHandle(ctx context.Context, id int64) (P
 	case domain.SexFemale:
 		return motherHandle{repo: r, id: id}, nil
 	default:
-		return nil, domain.ErrInvalid("parent pigeon %d has invalid sex", id)
+		return nil, fmt.Errorf("parent pigeon %d has invalid sex", id)
 	}
 }
 
 func (r *pigeonRepository) getPigeonSex(ctx context.Context, id int64) (*domain.Sex, error) {
 	sexStr, err := r.queries.GetPigeonSex(ctx, id)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, domain.ErrNotFound("pigeon by id %d", id)
+		return nil, fmt.Errorf("pigeon with id %d not found: %w", id, err)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get sex for pigeon %d: %w", id, err)
@@ -229,14 +229,18 @@ type fatherHandle struct {
 func (f fatherHandle) GetChildren(ctx context.Context) ([]domain.Pigeon, error) {
 	rows, err := f.repo.queries.GetPigeonChildrenAsFather(ctx, f.id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get children for father pigeon %d: %w", f.id, err)
 	}
 
 	return mapToDomainPigeons(rows), nil
 }
 
 func (f fatherHandle) HasChildren(ctx context.Context) (bool, error) {
-	return f.repo.queries.CheckPigeonHasChildrenAsFather(ctx, toNullableInt64(&f.id))
+	hasChildren, err := f.repo.queries.CheckPigeonHasChildrenAsFather(ctx, toNullableInt64(&f.id))
+	if err != nil {
+		return false, fmt.Errorf("check children for father pigeon %d: %w", f.id, err)
+	}
+	return hasChildren, nil
 }
 
 func (f fatherHandle) AssignChild(ctx context.Context, childID int64) error {
@@ -254,14 +258,18 @@ type motherHandle struct {
 func (m motherHandle) GetChildren(ctx context.Context) ([]domain.Pigeon, error) {
 	rows, err := m.repo.queries.GetPigeonChildrenAsMother(ctx, m.id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get children for mother pigeon %d: %w", m.id, err)
 	}
 
 	return mapToDomainPigeons(rows), nil
 }
 
 func (m motherHandle) HasChildren(ctx context.Context) (bool, error) {
-	return m.repo.queries.CheckPigeonHasChildrenAsMother(ctx, toNullableInt64(&m.id))
+	hasChildren, err := m.repo.queries.CheckPigeonHasChildrenAsMother(ctx, toNullableInt64(&m.id))
+	if err != nil {
+		return false, fmt.Errorf("check children for mother pigeon %d: %w", m.id, err)
+	}
+	return hasChildren, nil
 }
 
 func (m motherHandle) AssignChild(ctx context.Context, childID int64) error {
