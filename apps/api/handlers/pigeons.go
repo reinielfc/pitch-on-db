@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"pitch-on-db/internal/domain"
-	"pitch-on-db/internal/services"
+	"pitch-on-db/domain"
+	"pitch-on-db/services"
 
 	"github.com/gin-gonic/gin"
 )

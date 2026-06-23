@@ -4,7 +4,7 @@ package mocks
 
 import (
 	context "context"
-	domain "pitch-on-db/internal/domain"
+	domain "pitch-on-db/domain"
 
 	mock "github.com/stretchr/testify/mock"
 )

@@ -2,7 +2,9 @@ name: pitch-on-db
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
     restart: on-failure
     depends_on: [ postgres ]
     environment:

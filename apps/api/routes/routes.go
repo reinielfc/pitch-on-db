@@ -2,8 +2,8 @@ package routes
 
 import (
 	"net/http"
-	"pitch-on-db/internal/handlers"
-	"pitch-on-db/internal/services"
+	"pitch-on-db/handlers"
+	"pitch-on-db/services"
 
 	"github.com/gin-gonic/gin"
 )

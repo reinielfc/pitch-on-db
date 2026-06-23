@@ -2,8 +2,8 @@ package services
 
 import (
 	"context"
-	"pitch-on-db/internal/domain"
-	"pitch-on-db/internal/repos"
+	"pitch-on-db/domain"
+	"pitch-on-db/repos"
 )
 
 type PigeonService interface {

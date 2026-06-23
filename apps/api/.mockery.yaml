@@ -6,8 +6,8 @@ disable-version-string: true
 issue-845-fix: true
 
 packages:
-  pitch-on-db/internal/repos:
+  pitch-on-db/repos:
     config:
       all: true
-      dir: internal/services/mocks
+      dir: services/mocks
       outpkg: mocks

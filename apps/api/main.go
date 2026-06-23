@@ -3,13 +3,13 @@ package main
 import (
 	"log"
 
-	"pitch-on-db/internal/config"
-	"pitch-on-db/internal/db"
-	"pitch-on-db/internal/logging"
-	"pitch-on-db/internal/middleware"
-	"pitch-on-db/internal/repos"
-	"pitch-on-db/internal/routes"
-	"pitch-on-db/internal/services"
+	"pitch-on-db/config"
+	"pitch-on-db/db"
+	"pitch-on-db/logging"
+	"pitch-on-db/middleware"
+	"pitch-on-db/repos"
+	"pitch-on-db/routes"
+	"pitch-on-db/services"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/jackc/pgx/v5/stdlib"

@@ -3,7 +3,7 @@ package handlers
 import (
 	"strconv"
 
-	"pitch-on-db/internal/domain"
+	"pitch-on-db/domain"
 
 	"github.com/gin-gonic/gin"
 )

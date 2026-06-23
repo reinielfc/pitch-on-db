@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"pitch-on-db/internal/repos"
+	"pitch-on-db/repos"
 )
 
 type TagService interface {
