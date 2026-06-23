@@ -17,6 +17,15 @@ services:
       POSTGRES_SSLMODE: ${POSTGRES_SSLMODE:-disable}
     expose: [ 8080 ]
 
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runner
+    restart: on-failure
+    depends_on: [ api ]
+    ports: [ 80:80 ]
+
   postgres:
     image: postgres:16-alpine
     environment:

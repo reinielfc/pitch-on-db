@@ -14,6 +14,31 @@ services:
         - action: rebuild
           path: ./apps/api
 
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: dev
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+        loki-batch-wait: "500ms"
+        loki-batch-size: "1048576" # 1MB
+        loki-retries: "3"
+        loki-timeout: "2s"
+    networks: [ default, monitoring ] 
+    ports: [ 5173:5173 ]
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/web/src
+          target: /app/src
+        - action: sync+restart
+          path: ./apps/web/vite.config.ts
+          target: /app/vite.config.ts
+        - action: rebuild
+          path: ./apps/web/package.json
 
   postgres:
     logging:
