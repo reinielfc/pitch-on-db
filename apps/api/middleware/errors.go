@@ -29,11 +29,11 @@ func ErrorHandler() gin.HandlerFunc {
 		err := c.Errors.Last().Err
 
 		switch e := err.(type) {
-		case *domain.DomainError:
-			status := statusForKind(e.Kind)
+		case domain.DomainError:
+			status := statusForCode(e.Code())
 			c.JSON(status, gin.H{
 				"code":    http.StatusText(status),
-				"message": e.Message,
+				"message": e.Error(),
 			})
 
 		case validator.ValidationErrors:
@@ -56,17 +56,17 @@ func ErrorHandler() gin.HandlerFunc {
 	}
 }
 
-func statusForKind(kind domain.ErrorKind) int {
-	switch kind {
-	case domain.KindNotFound:
+func statusForCode(code domain.ErrorCode) int {
+	switch code {
+	case domain.ErrNotFound:
 		return http.StatusNotFound
-	case domain.KindConflict:
+	case domain.ErrConflict:
 		return http.StatusConflict
-	case domain.KindInvalid:
+	case domain.ErrInvalid:
 		return http.StatusBadRequest
-	case domain.KindUnauthorized:
+	case domain.ErrUnauthorized:
 		return http.StatusUnauthorized
-	case domain.KindForbidden:
+	case domain.ErrForbidden:
 		return http.StatusForbidden
 	default:
 		return http.StatusInternalServerError
