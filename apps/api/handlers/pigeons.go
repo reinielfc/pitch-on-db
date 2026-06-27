@@ -51,8 +51,8 @@ func (h *PigeonHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, toResponse(pigeon))
 }
 
-func (h *PigeonHandler) ListAll(c *gin.Context) {
-	pigeons, err := h.svc.ListAll(c.Request.Context())
+func (h *PigeonHandler) List(c *gin.Context) {
+	pigeons, err := h.svc.List(c.Request.Context())
 	if err != nil {
 		c.Error(err)
 		return
