@@ -4,14 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
-
-	"github.com/reinielfc/pitch-on-db/apps/api/config"
 )
 
-func Connect(cfg config.PostgresConfig) (*sql.DB, error) {
-	slog.Info("connecting to postgres", "config", cfg)
+func Connect(dsn string) (*sql.DB, error) {
+	slog.Info("connecting to postgres", "config", dsn)
 
-	conn, err := sql.Open("pgx", cfg.DSN())
+	conn, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
 	}

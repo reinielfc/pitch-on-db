@@ -28,7 +28,7 @@ func main() {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
-	db, err := db.Connect(cfg.Postgres)
+	db, err := db.Connect(cfg.Postgres.DSN())
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
