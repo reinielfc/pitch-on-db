@@ -286,38 +286,6 @@ func (q *Queries) ListPigeons(ctx context.Context) ([]Pigeon, error) {
 	return items, nil
 }
 
-const setPigeonFather = `-- name: SetPigeonFather :exec
-UPDATE pigeons
-SET father_id = $1
-WHERE id = $2
-`
-
-type SetPigeonFatherParams struct {
-	FatherID sql.NullInt64
-	ID       int64
-}
-
-func (q *Queries) SetPigeonFather(ctx context.Context, arg SetPigeonFatherParams) error {
-	_, err := q.db.ExecContext(ctx, setPigeonFather, arg.FatherID, arg.ID)
-	return err
-}
-
-const setPigeonMother = `-- name: SetPigeonMother :exec
-UPDATE pigeons
-SET mother_id = $1
-WHERE id = $2
-`
-
-type SetPigeonMotherParams struct {
-	MotherID sql.NullInt64
-	ID       int64
-}
-
-func (q *Queries) SetPigeonMother(ctx context.Context, arg SetPigeonMotherParams) error {
-	_, err := q.db.ExecContext(ctx, setPigeonMother, arg.MotherID, arg.ID)
-	return err
-}
-
 const updatePigeon = `-- name: UpdatePigeon :one
 UPDATE pigeons
 SET
@@ -363,4 +331,36 @@ func (q *Queries) UpdatePigeon(ctx context.Context, arg UpdatePigeonParams) (Pig
 		&i.MotherID,
 	)
 	return i, err
+}
+
+const updatePigeonFather = `-- name: UpdatePigeonFather :exec
+UPDATE pigeons
+SET father_id = $1
+WHERE id = $2
+`
+
+type UpdatePigeonFatherParams struct {
+	FatherID sql.NullInt64
+	ID       int64
+}
+
+func (q *Queries) UpdatePigeonFather(ctx context.Context, arg UpdatePigeonFatherParams) error {
+	_, err := q.db.ExecContext(ctx, updatePigeonFather, arg.FatherID, arg.ID)
+	return err
+}
+
+const updatePigeonMother = `-- name: UpdatePigeonMother :exec
+UPDATE pigeons
+SET mother_id = $1
+WHERE id = $2
+`
+
+type UpdatePigeonMotherParams struct {
+	MotherID sql.NullInt64
+	ID       int64
+}
+
+func (q *Queries) UpdatePigeonMother(ctx context.Context, arg UpdatePigeonMotherParams) error {
+	_, err := q.db.ExecContext(ctx, updatePigeonMother, arg.MotherID, arg.ID)
+	return err
 }

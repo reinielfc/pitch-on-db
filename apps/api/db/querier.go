@@ -14,8 +14,6 @@ type Querier interface {
 	CheckPigeonExists(ctx context.Context, id int64) (bool, error)
 	CheckPigeonHasChildrenAsFather(ctx context.Context, fatherID sql.NullInt64) (bool, error)
 	CheckPigeonHasChildrenAsMother(ctx context.Context, motherID sql.NullInt64) (bool, error)
-	ClearPigeonTags(ctx context.Context, pigeonID int64) error
-	ClearUnusedTags(ctx context.Context) error
 	CreatePigeon(ctx context.Context, arg CreatePigeonParams) (Pigeon, error)
 	DeletePigeon(ctx context.Context, id int64) error
 	GetPigeon(ctx context.Context, id int64) (Pigeon, error)
@@ -27,10 +25,12 @@ type Querier interface {
 	GetPigeonTags(ctx context.Context, pigeonID int64) ([]string, error)
 	ListPigeons(ctx context.Context) ([]Pigeon, error)
 	ListTags(ctx context.Context) ([]string, error)
+	PruneOrphanedTags(ctx context.Context) error
+	RemoveAllPigeonTags(ctx context.Context, pigeonID int64) error
 	RemovePigeonTag(ctx context.Context, arg RemovePigeonTagParams) error
-	SetPigeonFather(ctx context.Context, arg SetPigeonFatherParams) error
-	SetPigeonMother(ctx context.Context, arg SetPigeonMotherParams) error
 	UpdatePigeon(ctx context.Context, arg UpdatePigeonParams) (Pigeon, error)
+	UpdatePigeonFather(ctx context.Context, arg UpdatePigeonFatherParams) error
+	UpdatePigeonMother(ctx context.Context, arg UpdatePigeonMotherParams) error
 	UpsertTag(ctx context.Context, name string) (Tag, error)
 }
 

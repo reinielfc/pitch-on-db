@@ -32,12 +32,12 @@ RETURNING *;
 -- name: DeletePigeon :exec
 DELETE FROM pigeons WHERE id = $1;
 
--- name: SetPigeonFather :exec
+-- name: UpdatePigeonFather :exec
 UPDATE pigeons
 SET father_id = $1
 WHERE id = $2;
 
--- name: SetPigeonMother :exec
+-- name: UpdatePigeonMother :exec
 UPDATE pigeons
 SET mother_id = $1
 WHERE id = $2;
