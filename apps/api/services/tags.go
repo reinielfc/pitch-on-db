@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 
+	"github.com/reinielfc/pitch-on-db/apps/api/domain"
 	"github.com/reinielfc/pitch-on-db/apps/api/repos"
 )
 
@@ -19,5 +20,11 @@ func NewTagService(r repos.TagRepository) TagService {
 }
 
 func (s *tagsService) List(ctx context.Context) ([]string, error) {
-	return s.repo.List(ctx)
+	tags, err := s.repo.List(ctx)
+	if err != nil {
+		return nil, domain.NewInternalError(
+			domain.WithErr("list tags: %w", err),
+		)
+	}
+	return tags, nil
 }
