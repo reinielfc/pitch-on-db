@@ -6,7 +6,6 @@ import (
 	context "context"
 
 	domain "github.com/reinielfc/pitch-on-db/apps/api/domain"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -466,12 +465,12 @@ func (_c *PigeonRepository_HasChildren_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// ListAll provides a mock function with given fields: ctx
-func (_m *PigeonRepository) ListAll(ctx context.Context) ([]domain.Pigeon, error) {
+// List provides a mock function with given fields: ctx
+func (_m *PigeonRepository) List(ctx context.Context) ([]domain.Pigeon, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ListAll")
+		panic("no return value specified for List")
 	}
 
 	var r0 []domain.Pigeon
@@ -496,30 +495,30 @@ func (_m *PigeonRepository) ListAll(ctx context.Context) ([]domain.Pigeon, error
 	return r0, r1
 }
 
-// PigeonRepository_ListAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListAll'
-type PigeonRepository_ListAll_Call struct {
+// PigeonRepository_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
+type PigeonRepository_List_Call struct {
 	*mock.Call
 }
 
-// ListAll is a helper method to define mock.On call
+// List is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *PigeonRepository_Expecter) ListAll(ctx interface{}) *PigeonRepository_ListAll_Call {
-	return &PigeonRepository_ListAll_Call{Call: _e.mock.On("ListAll", ctx)}
+func (_e *PigeonRepository_Expecter) List(ctx interface{}) *PigeonRepository_List_Call {
+	return &PigeonRepository_List_Call{Call: _e.mock.On("List", ctx)}
 }
 
-func (_c *PigeonRepository_ListAll_Call) Run(run func(ctx context.Context)) *PigeonRepository_ListAll_Call {
+func (_c *PigeonRepository_List_Call) Run(run func(ctx context.Context)) *PigeonRepository_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context))
 	})
 	return _c
 }
 
-func (_c *PigeonRepository_ListAll_Call) Return(_a0 []domain.Pigeon, _a1 error) *PigeonRepository_ListAll_Call {
+func (_c *PigeonRepository_List_Call) Return(_a0 []domain.Pigeon, _a1 error) *PigeonRepository_List_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *PigeonRepository_ListAll_Call) RunAndReturn(run func(context.Context) ([]domain.Pigeon, error)) *PigeonRepository_ListAll_Call {
+func (_c *PigeonRepository_List_Call) RunAndReturn(run func(context.Context) ([]domain.Pigeon, error)) *PigeonRepository_List_Call {
 	_c.Call.Return(run)
 	return _c
 }

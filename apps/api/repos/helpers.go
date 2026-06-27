@@ -2,7 +2,10 @@ package repos
 
 import (
 	"database/sql"
+	"errors"
 )
+
+var ErrNotFound = errors.New("not found")
 
 func toNullableInt64(id *int64) sql.NullInt64 {
 	if id == nil {

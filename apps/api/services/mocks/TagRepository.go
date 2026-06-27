@@ -21,52 +21,6 @@ func (_m *TagRepository) EXPECT() *TagRepository_Expecter {
 	return &TagRepository_Expecter{mock: &_m.Mock}
 }
 
-// ClearUnusedTags provides a mock function with given fields: ctx
-func (_m *TagRepository) ClearUnusedTags(ctx context.Context) error {
-	ret := _m.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ClearUnusedTags")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// TagRepository_ClearUnusedTags_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClearUnusedTags'
-type TagRepository_ClearUnusedTags_Call struct {
-	*mock.Call
-}
-
-// ClearUnusedTags is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *TagRepository_Expecter) ClearUnusedTags(ctx interface{}) *TagRepository_ClearUnusedTags_Call {
-	return &TagRepository_ClearUnusedTags_Call{Call: _e.mock.On("ClearUnusedTags", ctx)}
-}
-
-func (_c *TagRepository_ClearUnusedTags_Call) Run(run func(ctx context.Context)) *TagRepository_ClearUnusedTags_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *TagRepository_ClearUnusedTags_Call) Return(_a0 error) *TagRepository_ClearUnusedTags_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *TagRepository_ClearUnusedTags_Call) RunAndReturn(run func(context.Context) error) *TagRepository_ClearUnusedTags_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetPigeonTags provides a mock function with given fields: ctx, pigeonID
 func (_m *TagRepository) GetPigeonTags(ctx context.Context, pigeonID int64) ([]string, error) {
 	ret := _m.Called(ctx, pigeonID)
@@ -180,6 +134,52 @@ func (_c *TagRepository_List_Call) Return(_a0 []string, _a1 error) *TagRepositor
 }
 
 func (_c *TagRepository_List_Call) RunAndReturn(run func(context.Context) ([]string, error)) *TagRepository_List_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// PruneOrphanedTags provides a mock function with given fields: ctx
+func (_m *TagRepository) PruneOrphanedTags(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PruneOrphanedTags")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TagRepository_PruneOrphanedTags_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PruneOrphanedTags'
+type TagRepository_PruneOrphanedTags_Call struct {
+	*mock.Call
+}
+
+// PruneOrphanedTags is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *TagRepository_Expecter) PruneOrphanedTags(ctx interface{}) *TagRepository_PruneOrphanedTags_Call {
+	return &TagRepository_PruneOrphanedTags_Call{Call: _e.mock.On("PruneOrphanedTags", ctx)}
+}
+
+func (_c *TagRepository_PruneOrphanedTags_Call) Run(run func(ctx context.Context)) *TagRepository_PruneOrphanedTags_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *TagRepository_PruneOrphanedTags_Call) Return(_a0 error) *TagRepository_PruneOrphanedTags_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TagRepository_PruneOrphanedTags_Call) RunAndReturn(run func(context.Context) error) *TagRepository_PruneOrphanedTags_Call {
 	_c.Call.Return(run)
 	return _c
 }
