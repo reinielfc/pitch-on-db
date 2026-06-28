@@ -16,26 +16,30 @@ import (
 )
 
 func main() {
+	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
+	// Initialize logger
 	_, err = logging.Init(cfg.App.LogLevel)
 	if err != nil {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
-	db, err := db.Connect(cfg.Postgres)
+	db, err := db.Connect(cfg.Postgres.DSN())
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 
+	// Wire up repositories and services
 	pigeonRepo := repos.NewPigeonRepository(db)
 	tagsRepo := repos.NewTagRepository(db)
 	pigeonSvc := services.NewPigeonService(pigeonRepo, tagsRepo)
 	tagSvc := services.NewTagService(tagsRepo)
 
+	// Initialize Gin router
 	r := gin.New()
 	r.Use(gin.Recovery())
 
@@ -47,10 +51,12 @@ func main() {
 
 	r.Use(middleware.ErrorHandler())
 
+	// Register routes
 	routes.Register(r, &routes.Dependencies{
 		PigeonService: pigeonSvc,
 		TagService:    tagSvc,
 	})
 
+	// Start the server
 	r.Run(":" + cfg.App.Port)
 }

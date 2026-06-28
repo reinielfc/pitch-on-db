@@ -24,25 +24,6 @@ func (q *Queries) AddPigeonTag(ctx context.Context, arg AddPigeonTagParams) erro
 	return err
 }
 
-const clearPigeonTags = `-- name: ClearPigeonTags :exec
-DELETE FROM pigeon_tags WHERE pigeon_id = $1
-`
-
-func (q *Queries) ClearPigeonTags(ctx context.Context, pigeonID int64) error {
-	_, err := q.db.ExecContext(ctx, clearPigeonTags, pigeonID)
-	return err
-}
-
-const clearUnusedTags = `-- name: ClearUnusedTags :exec
-DELETE FROM tags
-WHERE id NOT IN (SELECT tag_id FROM pigeon_tags)
-`
-
-func (q *Queries) ClearUnusedTags(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, clearUnusedTags)
-	return err
-}
-
 const getPigeonTags = `-- name: GetPigeonTags :many
 SELECT t.name FROM tags t
   JOIN pigeon_tags pt ON pt.tag_id = t.id
@@ -98,6 +79,25 @@ func (q *Queries) ListTags(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const pruneOrphanedTags = `-- name: PruneOrphanedTags :exec
+DELETE FROM tags
+WHERE id NOT IN (SELECT tag_id FROM pigeon_tags)
+`
+
+func (q *Queries) PruneOrphanedTags(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, pruneOrphanedTags)
+	return err
+}
+
+const removeAllPigeonTags = `-- name: RemoveAllPigeonTags :exec
+DELETE FROM pigeon_tags WHERE pigeon_id = $1
+`
+
+func (q *Queries) RemoveAllPigeonTags(ctx context.Context, pigeonID int64) error {
+	_, err := q.db.ExecContext(ctx, removeAllPigeonTags, pigeonID)
+	return err
 }
 
 const removePigeonTag = `-- name: RemovePigeonTag :exec

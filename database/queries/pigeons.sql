@@ -1,10 +1,25 @@
 -- name: CreatePigeon :one
-INSERT INTO pigeons (name, band_number, birth_date, sex)
+INSERT INTO pigeons (name, birth_date, sex, properties)
 VALUES ($1, $2, $3, $4)
 RETURNING *;
 
 -- name: ListPigeons :many
 SELECT * FROM pigeons ORDER BY id;
+
+-- name: ListPigeonsByPropertyValue :many
+SELECT * FROM pigeons
+WHERE properties ->> sqlc.arg('key')::text = sqlc.arg('value')::text
+ORDER BY id;
+
+-- name: ListPigeonsByPropertyKey :many
+SELECT * FROM pigeons
+WHERE properties ? sqlc.arg('key')::text
+ORDER BY id;
+
+-- name: ListPigeonsByPropertiesContains :many
+SELECT * FROM pigeons
+WHERE properties @> sqlc.arg('filter')::jsonb
+ORDER BY id;
 
 -- name: GetPigeon :one
 SELECT * FROM pigeons WHERE id = $1;
@@ -23,21 +38,21 @@ SELECT EXISTS (
 UPDATE pigeons
 SET
     name        = COALESCE(sqlc.narg('name'), name),
-    band_number = CASE WHEN sqlc.arg('set_band_number')::bool THEN sqlc.narg('band_number') ELSE band_number END,
     birth_date  = CASE WHEN sqlc.arg('set_birth_date')::bool THEN sqlc.narg('birth_date') ELSE birth_date END,
-    sex         = CASE WHEN sqlc.arg('set_sex')::bool THEN sqlc.narg('sex') ELSE sex END
+    sex         = CASE WHEN sqlc.arg('set_sex')::bool THEN sqlc.narg('sex') ELSE sex END,
+    properties  = CASE WHEN sqlc.arg('set_properties')::bool THEN sqlc.narg('properties') ELSE properties END
 WHERE id = sqlc.arg('id')
 RETURNING *;
 
 -- name: DeletePigeon :exec
 DELETE FROM pigeons WHERE id = $1;
 
--- name: SetPigeonFather :exec
+-- name: UpdatePigeonFather :exec
 UPDATE pigeons
 SET father_id = $1
 WHERE id = $2;
 
--- name: SetPigeonMother :exec
+-- name: UpdatePigeonMother :exec
 UPDATE pigeons
 SET mother_id = $1
 WHERE id = $2;

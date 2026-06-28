@@ -34,3 +34,9 @@ sql:
           - db_type: "bool"
             nullable: true
             go_type: { type: "bool", pointer: true }
+          - db_type: "jsonb"
+            nullable: true
+            go_type: { import: "encoding/json", type: "RawMessage", pointer: true }
+          - db_type: "jsonb"
+            nullable: false
+            go_type: { import: "encoding/json", type: "RawMessage" }

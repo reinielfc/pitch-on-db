@@ -6,7 +6,7 @@ INSERT INTO tags (name) VALUES ($1)
 ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
 RETURNING id, name;
 
--- name: ClearUnusedTags :exec
+-- name: PruneOrphanedTags :exec
 DELETE FROM tags
 WHERE id NOT IN (SELECT tag_id FROM pigeon_tags);
 
@@ -25,5 +25,5 @@ DELETE FROM pigeon_tags
 WHERE pigeon_id = $1
   AND tag_id = (SELECT id FROM tags WHERE name = $2);
 
--- name: ClearPigeonTags :exec
+-- name: RemoveAllPigeonTags :exec
 DELETE FROM pigeon_tags WHERE pigeon_id = $1;

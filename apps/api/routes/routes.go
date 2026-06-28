@@ -28,7 +28,7 @@ func registerPigeonRoutes(r *gin.Engine, deps *Dependencies) {
 
 	pigeons := r.Group("/pigeons")
 	{
-		pigeons.GET("", ph.ListAll)
+		pigeons.GET("", ph.List)
 		pigeons.POST("", ph.Create)
 
 		pigeon := pigeons.Group("/:id")
