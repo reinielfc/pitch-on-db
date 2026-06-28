@@ -7,6 +7,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 )
 
 type Querier interface {
@@ -24,6 +25,9 @@ type Querier interface {
 	GetPigeonSex(ctx context.Context, id int64) (*string, error)
 	GetPigeonTags(ctx context.Context, pigeonID int64) ([]string, error)
 	ListPigeons(ctx context.Context) ([]Pigeon, error)
+	ListPigeonsByPropertiesContains(ctx context.Context, filter json.RawMessage) ([]Pigeon, error)
+	ListPigeonsByPropertyKey(ctx context.Context, key string) ([]Pigeon, error)
+	ListPigeonsByPropertyValue(ctx context.Context, arg ListPigeonsByPropertyValueParams) ([]Pigeon, error)
 	ListTags(ctx context.Context) ([]string, error)
 	PruneOrphanedTags(ctx context.Context) error
 	RemoveAllPigeonTags(ctx context.Context, pigeonID int64) error

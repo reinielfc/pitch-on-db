@@ -6,6 +6,7 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 )
 
@@ -13,11 +14,11 @@ type Pigeon struct {
 	ID         int64
 	Name       string
 	CreatedAt  time.Time
-	BandNumber *string
 	BirthDate  *time.Time
 	Sex        *string
 	FatherID   sql.NullInt64
 	MotherID   sql.NullInt64
+	Properties *json.RawMessage
 }
 
 type PigeonTag struct {

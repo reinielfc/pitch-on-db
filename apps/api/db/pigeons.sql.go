@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 )
 
@@ -57,35 +58,35 @@ func (q *Queries) CheckPigeonHasChildrenAsMother(ctx context.Context, motherID s
 }
 
 const createPigeon = `-- name: CreatePigeon :one
-INSERT INTO pigeons (name, band_number, birth_date, sex)
+INSERT INTO pigeons (name, birth_date, sex, properties)
 VALUES ($1, $2, $3, $4)
-RETURNING id, name, created_at, band_number, birth_date, sex, father_id, mother_id
+RETURNING id, name, created_at, birth_date, sex, father_id, mother_id, properties
 `
 
 type CreatePigeonParams struct {
 	Name       string
-	BandNumber *string
 	BirthDate  *time.Time
 	Sex        *string
+	Properties *json.RawMessage
 }
 
 func (q *Queries) CreatePigeon(ctx context.Context, arg CreatePigeonParams) (Pigeon, error) {
 	row := q.db.QueryRowContext(ctx, createPigeon,
 		arg.Name,
-		arg.BandNumber,
 		arg.BirthDate,
 		arg.Sex,
+		arg.Properties,
 	)
 	var i Pigeon
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.CreatedAt,
-		&i.BandNumber,
 		&i.BirthDate,
 		&i.Sex,
 		&i.FatherID,
 		&i.MotherID,
+		&i.Properties,
 	)
 	return i, err
 }
@@ -100,7 +101,7 @@ func (q *Queries) DeletePigeon(ctx context.Context, id int64) error {
 }
 
 const getPigeon = `-- name: GetPigeon :one
-SELECT id, name, created_at, band_number, birth_date, sex, father_id, mother_id FROM pigeons WHERE id = $1
+SELECT id, name, created_at, birth_date, sex, father_id, mother_id, properties FROM pigeons WHERE id = $1
 `
 
 func (q *Queries) GetPigeon(ctx context.Context, id int64) (Pigeon, error) {
@@ -110,17 +111,17 @@ func (q *Queries) GetPigeon(ctx context.Context, id int64) (Pigeon, error) {
 		&i.ID,
 		&i.Name,
 		&i.CreatedAt,
-		&i.BandNumber,
 		&i.BirthDate,
 		&i.Sex,
 		&i.FatherID,
 		&i.MotherID,
+		&i.Properties,
 	)
 	return i, err
 }
 
 const getPigeonChildrenAsFather = `-- name: GetPigeonChildrenAsFather :many
-SELECT c.id, c.name, c.created_at, c.band_number, c.birth_date, c.sex, c.father_id, c.mother_id FROM pigeons p
+SELECT c.id, c.name, c.created_at, c.birth_date, c.sex, c.father_id, c.mother_id, c.properties FROM pigeons p
 INNER JOIN pigeons c ON c.father_id = p.id
 WHERE p.id = $1
 `
@@ -138,11 +139,11 @@ func (q *Queries) GetPigeonChildrenAsFather(ctx context.Context, id int64) ([]Pi
 			&i.ID,
 			&i.Name,
 			&i.CreatedAt,
-			&i.BandNumber,
 			&i.BirthDate,
 			&i.Sex,
 			&i.FatherID,
 			&i.MotherID,
+			&i.Properties,
 		); err != nil {
 			return nil, err
 		}
@@ -158,7 +159,7 @@ func (q *Queries) GetPigeonChildrenAsFather(ctx context.Context, id int64) ([]Pi
 }
 
 const getPigeonChildrenAsMother = `-- name: GetPigeonChildrenAsMother :many
-SELECT c.id, c.name, c.created_at, c.band_number, c.birth_date, c.sex, c.father_id, c.mother_id FROM pigeons p
+SELECT c.id, c.name, c.created_at, c.birth_date, c.sex, c.father_id, c.mother_id, c.properties FROM pigeons p
 INNER JOIN pigeons c ON c.mother_id = p.id
 WHERE p.id = $1
 `
@@ -176,11 +177,11 @@ func (q *Queries) GetPigeonChildrenAsMother(ctx context.Context, id int64) ([]Pi
 			&i.ID,
 			&i.Name,
 			&i.CreatedAt,
-			&i.BandNumber,
 			&i.BirthDate,
 			&i.Sex,
 			&i.FatherID,
 			&i.MotherID,
+			&i.Properties,
 		); err != nil {
 			return nil, err
 		}
@@ -196,7 +197,7 @@ func (q *Queries) GetPigeonChildrenAsMother(ctx context.Context, id int64) ([]Pi
 }
 
 const getPigeonFather = `-- name: GetPigeonFather :one
-SELECT f.id, f.name, f.created_at, f.band_number, f.birth_date, f.sex, f.father_id, f.mother_id FROM pigeons p
+SELECT f.id, f.name, f.created_at, f.birth_date, f.sex, f.father_id, f.mother_id, f.properties FROM pigeons p
 INNER JOIN pigeons f ON f.id = p.father_id
 WHERE p.id = $1
 `
@@ -208,17 +209,17 @@ func (q *Queries) GetPigeonFather(ctx context.Context, id int64) (Pigeon, error)
 		&i.ID,
 		&i.Name,
 		&i.CreatedAt,
-		&i.BandNumber,
 		&i.BirthDate,
 		&i.Sex,
 		&i.FatherID,
 		&i.MotherID,
+		&i.Properties,
 	)
 	return i, err
 }
 
 const getPigeonMother = `-- name: GetPigeonMother :one
-SELECT m.id, m.name, m.created_at, m.band_number, m.birth_date, m.sex, m.father_id, m.mother_id FROM pigeons p
+SELECT m.id, m.name, m.created_at, m.birth_date, m.sex, m.father_id, m.mother_id, m.properties FROM pigeons p
 INNER JOIN pigeons m ON m.id = p.mother_id
 WHERE p.id = $1
 `
@@ -230,11 +231,11 @@ func (q *Queries) GetPigeonMother(ctx context.Context, id int64) (Pigeon, error)
 		&i.ID,
 		&i.Name,
 		&i.CreatedAt,
-		&i.BandNumber,
 		&i.BirthDate,
 		&i.Sex,
 		&i.FatherID,
 		&i.MotherID,
+		&i.Properties,
 	)
 	return i, err
 }
@@ -251,7 +252,7 @@ func (q *Queries) GetPigeonSex(ctx context.Context, id int64) (*string, error) {
 }
 
 const listPigeons = `-- name: ListPigeons :many
-SELECT id, name, created_at, band_number, birth_date, sex, father_id, mother_id FROM pigeons ORDER BY id
+SELECT id, name, created_at, birth_date, sex, father_id, mother_id, properties FROM pigeons ORDER BY id
 `
 
 func (q *Queries) ListPigeons(ctx context.Context) ([]Pigeon, error) {
@@ -267,11 +268,130 @@ func (q *Queries) ListPigeons(ctx context.Context) ([]Pigeon, error) {
 			&i.ID,
 			&i.Name,
 			&i.CreatedAt,
-			&i.BandNumber,
 			&i.BirthDate,
 			&i.Sex,
 			&i.FatherID,
 			&i.MotherID,
+			&i.Properties,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPigeonsByPropertiesContains = `-- name: ListPigeonsByPropertiesContains :many
+SELECT id, name, created_at, birth_date, sex, father_id, mother_id, properties FROM pigeons
+WHERE properties @> $1::jsonb
+ORDER BY id
+`
+
+func (q *Queries) ListPigeonsByPropertiesContains(ctx context.Context, filter json.RawMessage) ([]Pigeon, error) {
+	rows, err := q.db.QueryContext(ctx, listPigeonsByPropertiesContains, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Pigeon
+	for rows.Next() {
+		var i Pigeon
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.BirthDate,
+			&i.Sex,
+			&i.FatherID,
+			&i.MotherID,
+			&i.Properties,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPigeonsByPropertyKey = `-- name: ListPigeonsByPropertyKey :many
+SELECT id, name, created_at, birth_date, sex, father_id, mother_id, properties FROM pigeons
+WHERE properties ? $1::text
+ORDER BY id
+`
+
+func (q *Queries) ListPigeonsByPropertyKey(ctx context.Context, key string) ([]Pigeon, error) {
+	rows, err := q.db.QueryContext(ctx, listPigeonsByPropertyKey, key)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Pigeon
+	for rows.Next() {
+		var i Pigeon
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.BirthDate,
+			&i.Sex,
+			&i.FatherID,
+			&i.MotherID,
+			&i.Properties,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPigeonsByPropertyValue = `-- name: ListPigeonsByPropertyValue :many
+SELECT id, name, created_at, birth_date, sex, father_id, mother_id, properties FROM pigeons
+WHERE properties ->> $1::text = $2::text
+ORDER BY id
+`
+
+type ListPigeonsByPropertyValueParams struct {
+	Key   string
+	Value string
+}
+
+func (q *Queries) ListPigeonsByPropertyValue(ctx context.Context, arg ListPigeonsByPropertyValueParams) ([]Pigeon, error) {
+	rows, err := q.db.QueryContext(ctx, listPigeonsByPropertyValue, arg.Key, arg.Value)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Pigeon
+	for rows.Next() {
+		var i Pigeon
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.BirthDate,
+			&i.Sex,
+			&i.FatherID,
+			&i.MotherID,
+			&i.Properties,
 		); err != nil {
 			return nil, err
 		}
@@ -290,33 +410,33 @@ const updatePigeon = `-- name: UpdatePigeon :one
 UPDATE pigeons
 SET
     name        = COALESCE($1, name),
-    band_number = CASE WHEN $2::bool THEN $3 ELSE band_number END,
-    birth_date  = CASE WHEN $4::bool THEN $5 ELSE birth_date END,
-    sex         = CASE WHEN $6::bool THEN $7 ELSE sex END
+    birth_date  = CASE WHEN $2::bool THEN $3 ELSE birth_date END,
+    sex         = CASE WHEN $4::bool THEN $5 ELSE sex END,
+    properties  = CASE WHEN $6::bool THEN $7 ELSE properties END
 WHERE id = $8
-RETURNING id, name, created_at, band_number, birth_date, sex, father_id, mother_id
+RETURNING id, name, created_at, birth_date, sex, father_id, mother_id, properties
 `
 
 type UpdatePigeonParams struct {
 	Name          *string
-	SetBandNumber bool
-	BandNumber    *string
 	SetBirthDate  bool
 	BirthDate     *time.Time
 	SetSex        bool
 	Sex           *string
+	SetProperties bool
+	Properties    *json.RawMessage
 	ID            int64
 }
 
 func (q *Queries) UpdatePigeon(ctx context.Context, arg UpdatePigeonParams) (Pigeon, error) {
 	row := q.db.QueryRowContext(ctx, updatePigeon,
 		arg.Name,
-		arg.SetBandNumber,
-		arg.BandNumber,
 		arg.SetBirthDate,
 		arg.BirthDate,
 		arg.SetSex,
 		arg.Sex,
+		arg.SetProperties,
+		arg.Properties,
 		arg.ID,
 	)
 	var i Pigeon
@@ -324,11 +444,11 @@ func (q *Queries) UpdatePigeon(ctx context.Context, arg UpdatePigeonParams) (Pig
 		&i.ID,
 		&i.Name,
 		&i.CreatedAt,
-		&i.BandNumber,
 		&i.BirthDate,
 		&i.Sex,
 		&i.FatherID,
 		&i.MotherID,
+		&i.Properties,
 	)
 	return i, err
 }

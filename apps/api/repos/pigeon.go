@@ -73,9 +73,9 @@ func NewPigeonRepository(sqlDB *sql.DB) PigeonRepository {
 func (r *pigeonRepository) Create(ctx context.Context, pigeon domain.Pigeon) (domain.Pigeon, error) {
 	row, err := r.queries.CreatePigeon(ctx, db.CreatePigeonParams{
 		Name:       pigeon.Name,
-		BandNumber: pigeon.BandNumber,
 		BirthDate:  pigeon.BirthDate,
 		Sex:        (*string)(pigeon.Sex),
+		Properties: pigeon.Properties,
 	})
 	if err != nil {
 		return domain.Pigeon{}, fmt.Errorf("create pigeon: %w", err)
@@ -114,14 +114,14 @@ func (r *pigeonRepository) Update(ctx context.Context, id int64, patch domain.Pi
 		ID:   id,
 		Name: patch.Name,
 
-		SetBandNumber: patch.BandNumber != nil,
-		BandNumber:    patch.BandNumber,
-
 		SetBirthDate: patch.BirthDate != nil,
 		BirthDate:    patch.BirthDate,
 
 		SetSex: patch.Sex != nil,
 		Sex:    (*string)(patch.Sex),
+
+		SetProperties: patch.Properties != nil,
+		Properties:    patch.Properties,
 	})
 	if errors.Is(err, sql.ErrNoRows) {
 		return domain.Pigeon{}, fmt.Errorf("update pigeon %d: %w", id, ErrNotFound)
@@ -188,9 +188,9 @@ func toDomainPigeon(row db.Pigeon) domain.Pigeon {
 		ID:         row.ID,
 		Name:       row.Name,
 		CreatedAt:  row.CreatedAt,
-		BandNumber: row.BandNumber,
 		BirthDate:  row.BirthDate,
 		Sex:        sex,
+		Properties: row.Properties,
 	}
 }
 
