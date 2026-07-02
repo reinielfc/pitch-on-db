@@ -1,7 +1,7 @@
 # =====================================================================
 # STAGE 1: Build the binary
 # =====================================================================
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 # Install git and certificates (Alpine needs these for external packages/HTTPS)
 RUN apk update && apk add --no-cache git ca-certificates && update-ca-certificates

@@ -20,14 +20,15 @@
         "version": "0.2.0",
         "configurations": [
             {
-                "type": "chrome",
+                "type": "editor-browser",
                 "request": "launch",
                 "name": "Debug: Web (Chrome)",
-                "url": "http://localhost:5173",
+                "url": "http://localhost:5173/pigeons",
                 "webRoot": "${workspaceFolder:Web}",
                 "sourceMapPathOverrides": {
                     "/@fs/*": "/*"
-                }
+                },
+                "preLaunchTask": "Start API + Web"
             }
         ],
         "compounds": []
@@ -35,7 +36,42 @@
     "tasks": {
         "version": "2.0.0",
         "tasks": [
-
+            {
+                "label": "Start API",
+                "icon": { "color": "terminal.ansiCyan", "id": "server" },
+                "type": "shell",
+                "command": "make",
+                "args": ["start-api"],
+                "group": "build",
+                "options": { "cwd": "${workspaceFolder:Root}" }
+            },
+            {
+                "label": "Start Web",
+                "icon": { "color": "terminal.ansiGreen", "id": "globe" },
+                "type": "shell",
+                "command": "pnpm",
+                "args": ["dev", "--host", "0.0.0.0", "--port", "5173"],
+                "group": "build",
+                "isBackground": true,
+                "options": { "cwd": "${workspaceFolder:Web}" },
+                "problemMatcher": {
+                    "owner": "custom",
+                    "pattern": {
+                        "regexp": "^(.*)$",
+                        "file": 1
+                    },
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": "^.*$",
+                        "endsPattern": "(Local:\\s+http://localhost:5173/|ready in [0-9]+ ms)"
+                    }
+                }
+            },
+            {
+                "label": "Start API + Web",
+                "dependsOn": ["Start API", "Start Web"],
+                "dependsOrder": "sequence"
+            }
         ]
     }
 }

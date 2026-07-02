@@ -95,17 +95,11 @@ start-db:
 
 start-api:
 	@printf "$(fmt_info)" "start-api" "Starting the API service using Docker Compose"
-	@$(COMPOSE_DEV) up -d api
+	@$(COMPOSE_DEV) build api
+	@$(COMPOSE_DEV) up -d postgres api
 	@printf "$(fmt_done)" "start-api" "API service started successfully"
 
-dev:
-	@$(COMPOSE_DEV) watch
-
-dev-logs:
-	@$(COMPOSE_DEV) logs -f
-
-dev-stop:
-	@$(COMPOSE_DEV) stop
-
-dev-down:
-	@$(COMPOSE_DEV) down
+start-monitoring:
+	@printf "$(fmt_info)" "start-monitoring" "Starting the monitoring services (Prometheus, Grafana, Loki) using Docker Compose"
+	@$(COMPOSE_DEV) up -d grafana loki
+	@printf "$(fmt_done)" "start-monitoring" "Monitoring services started successfully"
