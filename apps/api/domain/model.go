@@ -1,18 +1,17 @@
 package domain
 
 import (
-	"encoding/json"
 	"strconv"
 	"time"
 )
 
 type Pigeon struct {
-	ID         int64            `json:"id"`
-	Name       string           `json:"name"`
-	CreatedAt  time.Time        `json:"created_at"`
-	BirthDate  *time.Time       `json:"birth_date,omitempty"`
-	Sex        *Sex             `json:"sex,omitempty"`
-	Properties *json.RawMessage `json:"properties,omitempty"`
+	ID         int64      `json:"id"`
+	Name       string     `json:"name"`
+	CreatedAt  time.Time  `json:"created_at"`
+	BandNumber *string    `json:"band_number,omitempty"`
+	BirthDate  *time.Time `json:"birth_date,omitempty"`
+	Sex        *Sex       `json:"sex,omitempty"`
 }
 
 func ParseID(id string) (int64, error) {
@@ -50,9 +49,9 @@ func ParseSex(s string) (Sex, error) {
 
 type PigeonPatch struct {
 	Name       *string
+	BandNumber *string
 	BirthDate  *time.Time
 	Sex        *Sex
-	Properties *json.RawMessage
 }
 
 type PigeonParents struct {

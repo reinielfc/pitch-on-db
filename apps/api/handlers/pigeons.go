@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -23,10 +22,10 @@ func NewPigeonHandler(svc services.PigeonService) *PigeonHandler {
 
 func (h *PigeonHandler) Create(c *gin.Context) {
 	var req struct {
-		Name       string           `json:"name" binding:"required"`
-		BirthDate  *time.Time       `json:"birth_date"`
-		Sex        *string          `json:"sex"`
-		Properties *json.RawMessage `json:"properties"`
+		Name       string     `json:"name" binding:"required"`
+		BandNumber *string    `json:"band_number"`
+		BirthDate  *time.Time `json:"birth_date"`
+		Sex        *string    `json:"sex"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(err)
@@ -40,9 +39,9 @@ func (h *PigeonHandler) Create(c *gin.Context) {
 
 	pigeon, err := h.svc.Create(c.Request.Context(), domain.Pigeon{
 		Name:       req.Name,
+		BandNumber: req.BandNumber,
 		BirthDate:  req.BirthDate,
 		Sex:        sex,
-		Properties: req.Properties,
 	})
 	if err != nil {
 		c.Error(err)
@@ -89,10 +88,10 @@ func (h *PigeonHandler) Update(c *gin.Context) {
 	}
 
 	var req struct {
-		Name       *string          `json:"name"`
-		BirthDate  *time.Time       `json:"birth_date"`
-		Sex        *string          `json:"sex"`
-		Properties *json.RawMessage `json:"properties"`
+		Name       *string    `json:"name"`
+		BandNumber *string    `json:"band_number"`
+		BirthDate  *time.Time `json:"birth_date"`
+		Sex        *string    `json:"sex"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		c.Error(err)
@@ -106,9 +105,9 @@ func (h *PigeonHandler) Update(c *gin.Context) {
 
 	pigeon, err := h.svc.Update(c.Request.Context(), id, domain.PigeonPatch{
 		Name:       req.Name,
+		BandNumber: req.BandNumber,
 		BirthDate:  req.BirthDate,
 		Sex:        sex,
-		Properties: req.Properties,
 	})
 	if err != nil {
 		c.Error(err)
@@ -219,22 +218,22 @@ func (h *PigeonHandler) AssignChild(c *gin.Context) {
 }
 
 type pigeonResponse struct {
-	ID         int64            `json:"id"`
-	Name       string           `json:"name"`
-	CreatedAt  time.Time        `json:"created_at"`
-	BirthDate  *time.Time       `json:"birth_date,omitempty"`
-	Sex        *string          `json:"sex,omitempty"`
-	Properties *json.RawMessage `json:"properties,omitempty"`
+	ID         int64      `json:"id"`
+	Name       string     `json:"name"`
+	BandNumber *string    `json:"band_number,omitempty"`
+	BirthDate  *time.Time `json:"birth_date,omitempty"`
+	Sex        *string    `json:"sex,omitempty"`
+	CreatedAt  time.Time  `json:"created_at"`
 }
 
 func toResponse(p domain.Pigeon) pigeonResponse {
 	return pigeonResponse{
 		ID:         p.ID,
 		Name:       p.Name,
+		BandNumber: p.BandNumber,
 		BirthDate:  p.BirthDate,
-		CreatedAt:  p.CreatedAt,
 		Sex:        (*string)(p.Sex),
-		Properties: p.Properties,
+		CreatedAt:  p.CreatedAt,
 	}
 }
 
