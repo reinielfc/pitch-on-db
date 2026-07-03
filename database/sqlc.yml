@@ -5,8 +5,8 @@ sql:
     queries: "./queries"
     gen:
       go:
-        package: "db"
-        out: "../apps/api/db"
+        package: "generated"
+        out: "../apps/api/db/generated"
         emit_interface: true
         emit_pointers_for_null_types: true
         overrides:

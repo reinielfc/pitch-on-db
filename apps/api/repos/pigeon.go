@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/reinielfc/pitch-on-db/apps/api/db"
+	"github.com/reinielfc/pitch-on-db/apps/api/db/generated"
 	"github.com/reinielfc/pitch-on-db/apps/api/domain"
 )
 
@@ -63,15 +63,15 @@ type ParentHandle interface {
 
 type pigeonRepository struct {
 	db      *sql.DB
-	queries *db.Queries
+	queries *generated.Queries
 }
 
 func NewPigeonRepository(sqlDB *sql.DB) PigeonRepository {
-	return &pigeonRepository{db: sqlDB, queries: db.New(sqlDB)}
+	return &pigeonRepository{db: sqlDB, queries: generated.New(sqlDB)}
 }
 
 func (r *pigeonRepository) Create(ctx context.Context, pigeon domain.Pigeon) (domain.Pigeon, error) {
-	row, err := r.queries.CreatePigeon(ctx, db.CreatePigeonParams{
+	row, err := r.queries.CreatePigeon(ctx, generated.CreatePigeonParams{
 		Name:       pigeon.Name,
 		BandNumber: pigeon.BandNumber,
 		BirthDate:  pigeon.BirthDate,
@@ -110,7 +110,7 @@ func (r *pigeonRepository) Get(ctx context.Context, id int64) (*domain.Pigeon, e
 }
 
 func (r *pigeonRepository) Update(ctx context.Context, id int64, patch domain.PigeonPatch) (domain.Pigeon, error) {
-	row, err := r.queries.UpdatePigeon(ctx, db.UpdatePigeonParams{
+	row, err := r.queries.UpdatePigeon(ctx, generated.UpdatePigeonParams{
 		ID:   id,
 		Name: patch.Name,
 
@@ -168,7 +168,7 @@ func (r *pigeonRepository) GetParents(ctx context.Context, childID int64) (*doma
 	return parents, nil
 }
 
-func mapToDomainPigeons(rows []db.Pigeon) []domain.Pigeon {
+func mapToDomainPigeons(rows []generated.Pigeon) []domain.Pigeon {
 	pigeons := make([]domain.Pigeon, len(rows))
 	for i, row := range rows {
 		pigeons[i] = toDomainPigeon(row)
@@ -176,7 +176,7 @@ func mapToDomainPigeons(rows []db.Pigeon) []domain.Pigeon {
 	return pigeons
 }
 
-func toDomainPigeon(row db.Pigeon) domain.Pigeon {
+func toDomainPigeon(row generated.Pigeon) domain.Pigeon {
 	var sex *domain.Sex
 	if row.Sex != nil {
 		if domainSex, err := domain.ParseSex(*row.Sex); err == nil {
@@ -284,7 +284,7 @@ func (f fatherHandle) HasChildren(ctx context.Context) (bool, error) {
 }
 
 func (f fatherHandle) AssignChild(ctx context.Context, childID int64) error {
-	err := f.repo.queries.UpdatePigeonFather(ctx, db.UpdatePigeonFatherParams{
+	err := f.repo.queries.UpdatePigeonFather(ctx, generated.UpdatePigeonFatherParams{
 		ID:       childID,
 		FatherID: toNullableInt64(&f.id),
 	})
@@ -317,7 +317,7 @@ func (m motherHandle) HasChildren(ctx context.Context) (bool, error) {
 }
 
 func (m motherHandle) AssignChild(ctx context.Context, childID int64) error {
-	err := m.repo.queries.UpdatePigeonMother(ctx, db.UpdatePigeonMotherParams{
+	err := m.repo.queries.UpdatePigeonMother(ctx, generated.UpdatePigeonMotherParams{
 		ID:       childID,
 		MotherID: toNullableInt64(&m.id),
 	})

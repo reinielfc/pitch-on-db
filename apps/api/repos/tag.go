@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/reinielfc/pitch-on-db/apps/api/db"
+	"github.com/reinielfc/pitch-on-db/apps/api/db/generated"
 )
 
 // TagRepository defines the data access contract for tag records.
@@ -25,11 +25,11 @@ type TagRepository interface {
 
 type tagRepository struct {
 	db      *sql.DB
-	queries *db.Queries
+	queries *generated.Queries
 }
 
 func NewTagRepository(sqlDB *sql.DB) TagRepository {
-	return &tagRepository{db: sqlDB, queries: db.New(sqlDB)}
+	return &tagRepository{db: sqlDB, queries: generated.New(sqlDB)}
 }
 
 func (r *tagRepository) List(ctx context.Context) ([]string, error) {
@@ -79,7 +79,7 @@ func (r *tagRepository) SetPigeonTags(ctx context.Context, pigeonID int64, tags 
 			return fmt.Errorf("%s: upsert tag '%s': %w", desc, tag, err)
 		}
 
-		err = q.AddPigeonTag(ctx, db.AddPigeonTagParams{
+		err = q.AddPigeonTag(ctx, generated.AddPigeonTagParams{
 			PigeonID: pigeonID,
 			TagID:    row.ID,
 		})
