@@ -1,17 +1,17 @@
-APP_NAME := pitch-on-db
+# ---- Config ------------------------------------------------------------------
 
--include .env
-export
+ENV_FILE := .env
 
-# Go binaries installation path
-GOBIN := $(or $(shell go env GOBIN),$(shell go env GOPATH)/bin)
-PATH  := $(PATH):$(GOBIN)
+ifneq ("$(wildcard $(ENV_FILE))","")
+	include $(ENV_FILE)
+	export
+endif
 
-# Configuration Paths
-SQLC_CONFIG := database/sqlc.yml
-GOOSE_MIGRATIONS := database/migrations
+GO := go
 
-# Postgres connection parameters with defaults
+MIGRATIONS   := ./db/migrations
+SQLC_CONFIG  := ./db/sqlc.yml
+
 POSTGRES_USER     ?= pitchondb
 POSTGRES_PASSWORD ?= pitchondb
 POSTGRES_HOST     ?= localhost
@@ -19,188 +19,123 @@ POSTGRES_PORT     ?= 5432
 POSTGRES_DB       ?= pitchondb
 POSTGRES_SSLMODE  ?= disable
 
-pg_creds := $(POSTGRES_USER):$(POSTGRES_PASSWORD)
-pg_addr  := $(POSTGRES_HOST):$(POSTGRES_PORT)
-pg_path	 := /$(POSTGRES_DB)
-pg_query := ?sslmode=$(POSTGRES_SSLMODE)
+POSTGRES_URL := host=$(POSTGRES_HOST) port=$(POSTGRES_PORT) \
+	user=$(POSTGRES_USER) password=$(POSTGRES_PASSWORD) \
+	dbname=$(POSTGRES_DB) sslmode=$(POSTGRES_SSLMODE)
 
-POSTGRES_URL := postgres://$(pg_creds)@$(pg_addr)$(pg_path)$(pg_query)
+DOCKER_COMPOSE := $(or $(shell command -v docker-compose),$(shell command -v docker) compose,docker compose)\
+	-f docker-compose.yml -f docker-compose.dev.yml
 
-.PHONY: \
-	install-all \
-		install-gotools \
-			install-sqlc \
-			install-mockery \
-			install-goose \
-		install-pnpm \
-	generate \
-		generate-sqlc \
-		generate-mocks \
-	migrate \
-		rollback \
-	docker-up up \
-		start-db \
-		start-api \
-		start-web \
-		start-monitoring \
-	docker-down down \
-	docker-stop stop \
-	docker-ps ps
-	
+# ---- Docker ------------------------------------------------------------------
 
-# === Logging ===
+DOCKER_TARGETS := up stop down logs ps
 
-c_reset  := $(shell tput sgr0)
-c_bold   := $(shell tput bold)
-c_bwhite := $(c_bold)$(shell tput setaf 7)
-c_red    := $(shell tput setaf 1)
-c_green  := $(shell tput setaf 2)
+.PHONY: $(addprefix docker-,$(DOCKER_TARGETS)) $(DOCKER_TARGETS)
 
-fmt_info := $(c_bwhite)%s:$(c_reset) %s...\n
-log_info = printf "$(fmt_info)" "$@" "$(1)"
+up: docker-up ## Start Docker services
+docker-up:
+	$(DOCKER_COMPOSE) up -d
 
-fmt_done := $(c_bwhite)%s:$(c_reset) %s $(c_green)(done)$(c_reset)\n
-log_done = printf "$(fmt_done)" "$@" "$(1)"
+stop: docker-stop ## Stop Docker services
+docker-stop:
+	$(DOCKER_COMPOSE) stop
 
-fmt_fail := $(c_bwhite)%s:$(c_reset) %s $(c_red)(failed)$(c_reset)\n
-log_fail = printf "$(fmt_fail)" "$@" "$(1)"
+down: docker-down ## Stop and remove Docker services
+docker-down:
+	$(DOCKER_COMPOSE) down
 
-# === Development Environment ===
+logs: docker-logs ## Follow Docker logs
+docker-logs:
+	$(DOCKER_COMPOSE) logs -f
 
-ensure_file_exists = \
-	if [ ! -f "$(1)" ]; then \
-		$(call log_fail,File does not exist: $(1)); \
-		exit 1; \
-	fi
+ps: docker-ps ## List Docker services
+docker-ps:
+	$(DOCKER_COMPOSE) ps
 
-ensure_cmd_exists = \
-	if ! command -v "$(1)" &> /dev/null; then \
-		$(call log_fail,Command not found: $(1)); \
-		exit 1; \
-	fi
+.PHONY: $(addprefix start-,web api postgres grafana)
 
-fmt_bin_not_installed := Binary '%s' not found, please run 'make install-%s' to install it
-ensure_bin_installed = \
-	if [ ! -f "$(1)" ]; then \
-		$(call log_fail,$(shell printf "$(fmt_bin_not_installed)" "$(1)" "$(2)")); \
-		exit 1; \
-	fi
+start-web: ## Start Web service
+	$(DOCKER_COMPOSE) build web
+	$(DOCKER_COMPOSE) up web
 
-define install_go_tool
-	@$(call ensure_cmd_exists,go)
-	@go install -v $(2)
-	@$(call log_done,Go tool '$(1)' installed successfully)
-endef
+start-api: ## Start API service
+	$(DOCKER_COMPOSE) build api
+	$(DOCKER_COMPOSE) up api
 
-install-all: install-gotools install-pnpm
-	@$(call log_done,Setup completed successfully)
+start-postgres: ## Start Postgres service
+	$(DOCKER_COMPOSE) up postgres
 
-install-gotools: install-sqlc install-mockery install-goose
-	@$(call log_done,All Go tools installed successfully)
+start-grafana: ## Start Grafana service
+	$(DOCKER_COMPOSE) up grafana
 
-install-sqlc:
-	$(call install_go_tool,sqlc,github.com/sqlc-dev/sqlc/cmd/sqlc@latest)
+.PHONY: $(addprefix follow-,api postgres)
 
-install-mockery:
-	$(call install_go_tool,mockery,github.com/vektra/mockery/v2@latest)
+follow-api: ## Follow API service logs
+	$(DOCKER_COMPOSE) logs -f api
 
-install-goose:
-	$(call install_go_tool,goose,github.com/pressly/goose/v3/cmd/goose@latest)
+follow-postgres: ## Follow Postgres service logs
+	$(DOCKER_COMPOSE) logs -f postgres
 
-install-pnpm:
-	@$(call ensure_cmd_exists,curl)
-	@curl -fsSL https://get.pnpm.io/install.sh | sh -
-	@$(call log_done,pnpm installed successfully)
+.PHONY: reset-postgres
 
-# === Lifecycle Commands ===
+reset-postgres: ## Reset Postgres service (stop, remove, and start)
+	$(DOCKER_COMPOSE) down -v postgres
+	$(DOCKER_COMPOSE) up -d postgres
 
-sync:
-	@go work sync
-	@cd apps/api && go mod tidy
-	@$(call log_done,Dependencies synced successfully)
+# ---- Codegen -----------------------------------------------------------------
 
-test:
-	@go test -v ./apps/api/services
-	@$(call log_done,All tests passed successfully)
+.PHONY: sqlc $(addprefix generate-,sqlc)
 
-build:
-	@go build -o bin/$(APP_NAME) ./apps/api
-	@$(call log_done,Application built successfully)
-
-# === Code Generation ===
-
-generate: generate-sqlc generate-mocks
-	@$(call log_done,All code generation tasks completed successfully)
-
+sqlc: generate-sqlc ## Generate SQL code
 generate-sqlc:
-	@$(call ensure_cmd_exists,sqlc)
-	@$(call ensure_file_exists,$(SQLC_CONFIG))
-	@sqlc generate --file $(SQLC_CONFIG)
-	@$(call log_done,SQL code generated successfully)
+	$(GO) tool sqlc generate -f $(SQLC_CONFIG)
 
-generate-mocks:
-	@$(call ensure_cmd_exists,mockery)
-	@cd ./apps/api && mockery
-	@$(call log_done,Mocks generated successfully)
+# ---- Postgres / Migrations ---------------------------------------------------
 
-# === Database Migration ===
+.PHONY: migrate rollback $(addprefix goose-,up down)
 
-goose_migrate := goose -dir $(GOOSE_MIGRATIONS) postgres "$(POSTGRES_URL)"
+migrate: goose-up ## Apply database migrations
+goose-up:
+	$(GO) tool goose $(GOOSE_FLAGS) up
 
-migrate:
-	@$(call ensure_cmd_exists,goose)
-	@$(goose_migrate) up
-	@$(call log_done,Database migrations applied successfully)
+rollback: goose-down ## Rollback database migrations
+goose-down:
+	$(GO) tool goose $(GOOSE_FLAGS) down
 
-rollback:
-	@$(call ensure_cmd_exists,goose)
-	@$(goose_migrate) down
-	@$(call log_done,Database migration rolled back successfully)
+GOOSE_FLAGS := -dir $(MIGRATIONS) postgres '$(POSTGRES_URL)'
 
-# === Docker ===
+# ---- API ---------------------------------------------------------------------
 
-compose 	:= docker-compose -f docker-compose.yml
-compose_dev := $(compose) -f docker-compose.dev.yml
+.PHONY: $(addprefix api.,build test run healthcheck clean)
 
-docker-up up:
-	@$(compose_dev) build api web
-	@$(compose_dev) up -d
-	@$(call log_done,All services started successfully)
+api.build: ## (API) Build the application
+	$(MAKE) -C ./apps/api build
 
-start-db:
-	@$(compose_dev) up -d postgres
-	@$(call log_done,Postgres database started successfully)
+api.test: ## (API) Run tests for the application
+	$(MAKE) -C ./apps/api test
 
-start-api:
-	@$(compose_dev) build api
-	@$(compose_dev) up -d api
-	@$(call log_done,API service started successfully)
+api.run: ## (API) Run the application
+	$(MAKE) -C ./apps/api run
 
-start-web:
-	@$(compose_dev) build web
-	@$(compose_dev) up -d web
-	@$(call log_done,Web service started successfully)
+api.healthcheck: ## (API) Perform health check on the application
+	$(MAKE) -C ./apps/api healthcheck
 
-start-monitoring:
-	@$(compose_dev) up -d grafana loki
-	@$(call log_done,Monitoring services started successfully)
+api.clean: ## (API) Clean build artifacts for the application
+	$(MAKE) -C ./apps/api clean
 
-docker-down down:
-	@$(compose_dev) down
-	@$(call log_done,All services stopped and removed successfully)
+# ---- Tools -------------------------------------------------------------------
 
-docker-stop stop:
-	@$(compose_dev) stop
-	@$(call log_done,All services stopped successfully)
+.PHONY: tools
 
-docker-clean:
-	@$(compose_dev) down --volumes
-	@$(call log_done,All services stopped and cleaned up successfully)
+tools: ## Install required tools
+	cd tools && $(GO) install tool
 
-docker-purge:
-	@$(compose_dev) down --rmi all --volumes --remove-orphans
-	@$(call log_done,All services purged successfully)
+# ---- Housekeeping ------------------------------------------------------------
 
-docker-ps ps:
-	@$(call log_info,Listing all running services)
-	@$(compose_dev) ps
+.PHONY: help
+
+help: ## Show this help message
+	@echo -e "Usage: make [target]\n"
+	@grep -hE '^[a-zA-Z_.-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+		| awk 'BEGIN {FS = ":.*?## "}; {printf "\t%-20s %s\n", $$1, $$2}'
+	@echo
