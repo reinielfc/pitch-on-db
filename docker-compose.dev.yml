@@ -8,11 +8,13 @@ services:
         loki-batch-size: "1048576" # 1MB
         loki-retries: "3"
         loki-timeout: "2s"
+    environment:
+      SERVICE_APP_ENV: ${APP_ENV:-development}
+      SERVICE_APP_DEBUG: ${APP_DEBUG:-true}
     networks: [ default, monitoring ]
+    ports: [ "8080:8080" ]
     develop:
-      watch:
-        - action: rebuild
-          path: ./apps/api
+      watch: [{action: rebuild, path: ./apps/api}]
 
   web:
     build:
@@ -27,7 +29,9 @@ services:
         loki-batch-size: "1048576" # 1MB
         loki-retries: "3"
         loki-timeout: "2s"
-    networks: [ default, monitoring ] 
+    environment:
+      API_PROXY_TARGET: ${API_PROXY_TARGET:-http://api:8080}
+    networks: [ default, monitoring ]
     ports: [ 5173:5173 ]
     develop:
       watch:

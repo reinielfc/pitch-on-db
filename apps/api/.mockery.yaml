@@ -1,13 +1,11 @@
-with-expecter: true
-filename: "{{.InterfaceName}}.go"
-mockname: "{{.InterfaceName}}"
-resolve-type-alias: false
-disable-version-string: true
-issue-845-fix: true
+structname: "{{.InterfaceName}}"
+filename: "{{.InterfaceFile | base}}"
+pkgname: mocks
 
 packages:
-  github.com/reinielfc/pitch-on-db/apps/api/repos:
+  github.com/reinielfc/pitchondb/apps/api/internal/pigeon:
     config:
-      all: true
-      dir: services/mocks
-      outpkg: mocks
+      dir: "{{.InterfaceDir}}/mocks"
+    interfaces:
+      Repository:
+      QueryService:
