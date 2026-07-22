@@ -120,9 +120,10 @@ sync: ## Synchronize dependencies
 	$(GO) mod tidy
 
 clean: ## Clean up build artifacts
-	rm -rf tmp; rm -vf $(BINARY_PATH) coverage.out
+	rm -rvf tmp; rm -vf $(BINARY_PATH) coverage.out
 
 help: ## Show this help message
 	@echo -e "Usage: make [target]\n"
-	@grep -E '^[a-zA-Z_.-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+	@grep -hE '^[a-zA-Z_.-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "\t%-16s %s\n", $$1, $$2}'
+	@echo

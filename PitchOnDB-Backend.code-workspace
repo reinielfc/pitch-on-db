@@ -1,45 +1,46 @@
 {
     "folders": [
-        { "name": "API",  "path": "apps/api"  },
-        { "name": "DB",   "path": "database" },
-        { "name": "Root", "path": "." },
+        { "name": "API",  "path": "apps/api" },
+        { "name": "DB",   "path": "db" },
+        { "name": "Root", "path": "." }
     ],
-    "extensions": {
-        "recommendations": ["golang.go", "ms-azuretools.vscode-docker"]
+    "extensions": { 
+        "recommendations": [
+            "golang.go",
+            "ms-azuretools.vscode-docker",
+            "cweijan.vscode-postgresql-client2"
+        ]
     },
     "settings": {
-        "files.exclude": {
-            "apps": true,
-            "database": true,
-        },
+        "files.exclude": { "apps": true,  "db": true },
+        "terminal.integrated.cwd": "${workspaceFolder:API}"
     },
     "launch": {
         "version": "0.2.0",
         "configurations": [
             {
                 "name": "Debug API",
-                "type": "go",
-                "request": "launch",
-                "mode": "debug",
-                "program": "${workspaceFolder:API}",
-                "cwd": "${workspaceFolder:Root}",
+                "type": "go", "request": "launch", "mode": "debug",
+                "program": "${workspaceFolder:API}/cmd/service",
+                "cwd": "${workspaceFolder:API}",
                 "envFile": "${workspaceFolder:Root}/.env",
                 "env": { "POSTGRES_HOST": "localhost" },
+                "internalConsoleOptions": "openOnSessionStart",
                 "showLog": true,
-                "preLaunchTask": "Start DB"
+                "preLaunchTask": "start-postgres"
             }
-        ],
+        ]
     },
     "tasks": {
         "version": "2.0.0",
-        "tasks": [{
-            "label": "Start DB",
-            "icon": { "color": "terminal.ansiCyan", "id": "database" },
-            "type": "shell",
-            "command": "make",
-            "args": ["start-db"],
-            "group": "build",
-            "options": { "cwd": "${workspaceFolder:Root}" }
-        }]
+        "tasks": [
+            {
+                "label": "start-postgres", "detail": "Start Postgres service",
+                "icon": { "color": "terminal.ansiBlue", "id": "database" },
+                "type": "shell", "command": "make", "args": [ "start-postgres" ],
+                "options": { "cwd": "${workspaceFolder:Root}" },
+                "problemMatcher": []
+            },
+        ]
     }
 }
