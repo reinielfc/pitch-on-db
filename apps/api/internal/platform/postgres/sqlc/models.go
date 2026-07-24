@@ -11,16 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type Pairing struct {
-	ID           uuid.UUID
-	PartnerAID   uuid.UUID
-	PartnerARole sql.NullString
-	PartnerBID   uuid.NullUUID
-	PartnerBRole sql.NullString
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-}
-
 type Pigeon struct {
 	ID            uuid.UUID
 	Name          sql.NullString
@@ -32,7 +22,6 @@ type Pigeon struct {
 	AcquiredVia   string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
-	PairingID     uuid.NullUUID
 }
 
 type PigeonSummary struct {
