@@ -43,7 +43,7 @@ func main() {
 
 	cli := humacli.New(func(hooks humacli.Hooks, opts *config.Options) {
 		// Set up logging and telemetry
-		telemetry.SetupLogging(opts.App.Debug)
+		telemetry.SetupLogging(opts.Debug)
 
 		// Connect to the database
 		postgresDSN := opts.Postgres.DSN()
@@ -67,7 +67,7 @@ func main() {
 
 		// Set up HTTP API
 		router := httpapi.SetupRouter(&api,
-			httpapi.DefaultConfig(opts.App.Name, Version),
+			httpapi.DefaultConfig(opts.Name, Version),
 			httpapi.WithHealthRoute(startupTime, Version, GitCommit, parsedBuildTime),
 			httpapi.WithGroupRoutes("/v1",
 				httpapi.WithPigeonRoutes(pigeonSvc, pigeonQuery),
@@ -76,13 +76,13 @@ func main() {
 
 		// Create HTTP server
 		server := &http.Server{
-			Addr:    fmt.Sprintf(":%s", opts.App.Port),
+			Addr:    fmt.Sprintf(":%s", opts.Port),
 			Handler: router,
 		}
 
 		// Start the server
 		hooks.OnStart(func() {
-			slog.Info("starting server", "version", Version, "port", opts.App.Port)
+			slog.Info("starting server", "version", Version, "port", opts.Port)
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				slog.Error("server listen", "error", err)
 				os.Exit(1)
@@ -146,7 +146,7 @@ func main() {
 				log.Fatalf("invalid interval %q: %v", interval, err)
 			}
 
-			url := fmt.Sprintf("http://localhost:%s/health", opts.App.Port)
+			url := fmt.Sprintf("http://localhost:%s/health", opts.Port)
 			if res, err := pollHealth(url, retries, dur); err != nil {
 				log.Fatal(err)
 			} else {
