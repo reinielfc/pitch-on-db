@@ -1,7 +1,7 @@
 # PitchOnDB Backend Agent Guide (Orthogonal Design)
 
-This guide is for AI/code agents working on the backend only (`apps/api` + `db`).
-The frontend (`apps/web`) is intentionally out of scope.
+This guide is for AI/code agents working on the backend only (`api` + `db`).
+The frontend (`web`) is intentionally out of scope.
 
 ---
 
@@ -16,7 +16,7 @@ The frontend (`apps/web`) is intentionally out of scope.
 - Logging: structured JSON via `log/slog`
 
 Key entrypoint:
-- `apps/api/cmd/service/main.go`
+- `api/cmd/service/main.go`
 
 ---
 
@@ -64,7 +64,7 @@ Keep this split when adding features: avoid mixing read-model logic into aggrega
 ## 4) Package Map
 
 ### Composition root
-- `apps/api/cmd/service/main.go`
+- `api/cmd/service/main.go`
   - Initializes logging/config
   - Connects DB
   - Wires adapters to ports
@@ -75,26 +75,26 @@ Keep this split when adding features: avoid mixing read-model logic into aggrega
     - `healthcheck` (poll `/health`)
 
 ### Feature package (domain + ports + use cases)
-- `apps/api/internal/pigeon/domain.go`  
+- `api/internal/pigeon/domain.go`  
   Aggregate with private fields, behavior methods (`Rename`, `DetermineSex`, etc.), snapshot export.
-- `apps/api/internal/pigeon/service.go`  
+- `api/internal/pigeon/service.go`  
   Command-side use cases (`Add`, `UpdatePigeonDetails`).
-- `apps/api/internal/pigeon/repository.go`  
+- `api/internal/pigeon/repository.go`  
   Write-side persistence port.
-- `apps/api/internal/pigeon/query.go`  
+- `api/internal/pigeon/query.go`  
   Read-side query port.
-- `apps/api/internal/pigeon/domain_enumer.go`  
+- `api/internal/pigeon/domain_enumer.go`  
   Generated enum helpers (from `enumer`).
-- `apps/api/internal/pigeon/mocks/*`  
+- `api/internal/pigeon/mocks/*`  
   Generated test mocks for ports.
 
 ### Platform adapters
-- `apps/api/internal/platform/httpapi/*`
+- `api/internal/platform/httpapi/*`
   - Router composition
   - Health and pigeon handlers
   - API DTO schemas and mapping
   - Request/response middleware
-- `apps/api/internal/platform/postgres/*`
+- `api/internal/platform/postgres/*`
   - DB connection
   - Repository adapter (`pigeon.Repository`)
   - Query adapter (`pigeon.QueryService`)
@@ -102,9 +102,9 @@ Keep this split when adding features: avoid mixing read-model logic into aggrega
   - Generated sqlc package
 
 ### Cross-cutting support
-- `apps/api/internal/config/options.go` (runtime options)
-- `apps/api/internal/telemetry/logging.go` (slog setup)
-- `apps/api/internal/utils/*` (small generic helpers)
+- `api/internal/config/options.go` (runtime options)
+- `api/internal/telemetry/logging.go` (slog setup)
+- `api/internal/utils/*` (small generic helpers)
 
 ---
 
@@ -120,7 +120,7 @@ Keep this split when adding features: avoid mixing read-model logic into aggrega
 When adding endpoints:
 1. Add handler method + I/O types in `internal/platform/httpapi`
 2. Register route in `With<Feature>Routes(...)`
-3. Regenerate spec (`make -C apps/api generate-spec` or root equivalent flow)
+3. Regenerate spec (`make -C api generate-spec` or root equivalent flow)
 
 ---
 
@@ -132,7 +132,7 @@ DB artifacts live in root `db/`:
 - sqlc config: `db/sqlc.yml`
 
 sqlc output target:
-- `apps/api/internal/platform/postgres/sqlc`
+- `api/internal/platform/postgres/sqlc`
 
 Current schema highlights:
 - `pigeons` table
@@ -156,14 +156,14 @@ Rules:
 - `make docker-up` / `make docker-down`
 
 ### API module commands
-- `make -C apps/api build`
-- `make -C apps/api run`
-- `make -C apps/api dev`
-- `make -C apps/api test`
-- `make -C apps/api lint`
-- `make -C apps/api generate`
-- `make -C apps/api generate-mocks`
-- `make -C apps/api generate-spec`
+- `make -C api build`
+- `make -C api run`
+- `make -C api dev`
+- `make -C api test`
+- `make -C api lint`
+- `make -C api generate`
+- `make -C api generate-mocks`
+- `make -C api generate-spec`
 
 ---
 
@@ -197,8 +197,8 @@ Rules:
 7. Wire everything in `cmd/service/main.go`.
 8. Generate/update:
    - sqlc (`make generate-sqlc`)
-   - mocks (`make -C apps/api generate-mocks`) when interfaces change
-   - OpenAPI (`make -C apps/api generate-spec`) when API changes
+   - mocks (`make -C api generate-mocks`) when interfaces change
+   - OpenAPI (`make -C api generate-spec`) when API changes
 9. Run backend tests/lint before finalizing.
 
 ---
@@ -206,9 +206,9 @@ Rules:
 ## 10) Generated Files and Sources of Truth
 
 - Generated:
-  - `apps/api/internal/platform/postgres/sqlc/*`
-  - `apps/api/internal/pigeon/domain_enumer.go`
-  - `apps/api/internal/pigeon/mocks/*`
+  - `api/internal/platform/postgres/sqlc/*`
+  - `api/internal/pigeon/domain_enumer.go`
+  - `api/internal/pigeon/mocks/*`
 - Source of truth:
   - SQL files in `db/queries` and `db/migrations`
   - Enum declarations in `internal/pigeon/domain.go`

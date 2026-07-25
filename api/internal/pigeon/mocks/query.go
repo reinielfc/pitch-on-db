@@ -7,7 +7,7 @@ package mocks
 import (
 	"context"
 
-	"github.com/reinielfc/pitchondb/apps/api/internal/pigeon"
+	"github.com/reinielfc/pitchondb/api/internal/pigeon"
 	mock "github.com/stretchr/testify/mock"
 )
 

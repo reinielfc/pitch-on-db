@@ -8,7 +8,7 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humagin"
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
-	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi/middleware"
+	"github.com/reinielfc/pitchondb/api/internal/platform/httpapi/middleware"
 )
 
 type Route func(api huma.API)

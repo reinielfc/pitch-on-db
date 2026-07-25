@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/reinielfc/pitchondb/apps/api/internal/pigeon"
+	"github.com/reinielfc/pitchondb/api/internal/pigeon"
 	mock "github.com/stretchr/testify/mock"
 )
 

@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/reinielfc/pitchondb/apps/api/internal/pigeon"
-	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi/routes"
+	"github.com/reinielfc/pitchondb/api/internal/pigeon"
+	"github.com/reinielfc/pitchondb/api/internal/platform/httpapi/routes"
 )
 
 type PigeonsHandler struct {

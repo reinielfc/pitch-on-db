@@ -1,4 +1,4 @@
-module github.com/reinielfc/pitchondb/apps/api
+module github.com/reinielfc/pitchondb/api
 
 go 1.26.0
 

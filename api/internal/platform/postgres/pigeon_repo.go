@@ -6,8 +6,8 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"github.com/reinielfc/pitchondb/apps/api/internal/pigeon"
-	"github.com/reinielfc/pitchondb/apps/api/internal/platform/postgres/sqlc"
+	"github.com/reinielfc/pitchondb/api/internal/pigeon"
+	"github.com/reinielfc/pitchondb/api/internal/platform/postgres/sqlc"
 )
 
 type pigeonRepository struct {

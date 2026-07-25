@@ -6,11 +6,11 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
 # Install deps (cache layer)
-COPY apps/web/package.json apps/web/pnpm-lock.yaml apps/web/pnpm-workspace.yaml ./
+COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # Copy source
-COPY apps/web .
+COPY web .
 
 # ---- Dev stage ----
 FROM base AS dev

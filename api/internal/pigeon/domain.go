@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/reinielfc/pitchondb/apps/api/internal/utils/enums"
+	"github.com/reinielfc/pitchondb/api/internal/utils/enums"
 )
 
 var (

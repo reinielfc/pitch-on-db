@@ -6,5 +6,5 @@ sql:
     gen:
       go:
         package: "sqlc"
-        out: "../apps/api/internal/platform/postgres/sqlc"
+        out: "../api/internal/platform/postgres/sqlc"
         emit_interface: true

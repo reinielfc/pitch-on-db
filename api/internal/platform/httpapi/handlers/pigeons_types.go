@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/reinielfc/pitchondb/apps/api/internal/pigeon"
-	"github.com/reinielfc/pitchondb/apps/api/internal/utils/enums"
-	"github.com/reinielfc/pitchondb/apps/api/internal/utils/slicesx"
+	"github.com/reinielfc/pitchondb/api/internal/pigeon"
+	"github.com/reinielfc/pitchondb/api/internal/utils/enums"
+	"github.com/reinielfc/pitchondb/api/internal/utils/slicesx"
 )
 
 type Pigeon struct {

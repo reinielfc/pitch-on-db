@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/danielgtaylor/huma/v2/humacli"
-	"github.com/reinielfc/pitchondb/apps/api/internal/config"
-	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi/handlers"
+	"github.com/reinielfc/pitchondb/api/internal/config"
+	"github.com/reinielfc/pitchondb/api/internal/platform/httpapi/handlers"
 	"github.com/spf13/cobra"
 )
 

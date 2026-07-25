@@ -13,7 +13,7 @@ WORKDIR /app
 # Copy only dependency manifests first, so this layer (and go work sync below)
 # stays cached as long as dependencies don't change, even if source code does
 COPY go.work go.work.sum ./
-COPY apps/api/go.mod apps/api/go.sum ./apps/api/
+COPY api/go.mod api/go.sum ./api/
 
 # Sync the Go workspace and download modules
 # Cache mount persists the module download cache across builds
@@ -29,10 +29,10 @@ RUN go install github.com/air-verse/air@latest
 
 # Bring in the actual source (bind-mounted/synced over in practice via compose watch,
 # but included here so `docker build --target dev` also works standalone)
-COPY apps/api/ ./apps/api/
+COPY api/ ./api/
 
 # Set working directory to the app source so air can find the .air.toml config file
-WORKDIR /app/apps/api
+WORKDIR /app/api
 
 # Run air instead of the compiled binary — watches for changes and rebuilds/restarts
 CMD ["air", "-c", ".air.toml"]
@@ -43,7 +43,7 @@ CMD ["air", "-c", ".air.toml"]
 FROM base AS builder
 
 # Copy full source now that deps are resolved and cached
-COPY apps/api/ ./apps/api/
+COPY api/ ./api/
 
 # Build a statically linked binary:
 # - CGO_ENABLED=0 avoids dynamic linking so it runs on a minimal base (no libc dependency)
@@ -52,7 +52,7 @@ COPY apps/api/ ./apps/api/
 # Cache mounts speed up recompiles by preserving build and module caches between builds
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
-    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /bin/api ./apps/api/main.go
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /bin/api ./api/main.go
 
 # =====================================================================
 # RUNNER STAGE: minimal production image, no Go toolchain or source code
