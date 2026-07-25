@@ -24,6 +24,8 @@ func (h *PigeonsHandler) RegisterRoutes(api huma.API) {
 	{
 		huma.Get(pigeons, "", h.List, routes.WithSummary("List Pigeons"))
 		huma.Post(pigeons, "", h.Add, routes.WithSummary("Add Pigeon"))
+
+		huma.Delete(pigeons, "/{id}", h.Remove, routes.WithSummary("Remove Pigeon"))
 	}
 }
 
@@ -68,5 +70,15 @@ func (h *PigeonsHandler) Add(ctx context.Context, input *I) (*AddPigeonOutput, e
 	return &AddPigeonOutput{
 		Status: http.StatusCreated,
 		Body:   fromDomainPigeon(pigeon),
+	}, nil
+}
+
+func (h *PigeonsHandler) Remove(ctx context.Context, input *ResourceIDInput) (*NoContentOutput, error) {
+	err := h.svc.Remove(ctx, input.ID.UUID)
+	if err != nil {
+		return nil, fmt.Errorf("remove pigeon: %w", err)
+	}
+	return &NoContentOutput{
+		Status: http.StatusNoContent,
 	}, nil
 }

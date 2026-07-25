@@ -138,6 +138,7 @@ components:
           description: Unique identifier of the pigeon
           examples:
             - 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
           type: string
         name:
           description: Name of the pigeon
@@ -209,6 +210,7 @@ components:
           description: Unique identifier of the pigeon
           examples:
             - 550e8400-e29b-41d4-a716-446655440000
+          format: uuid
           type: string
         name:
           description: Name of the pigeon
@@ -249,7 +251,7 @@ components:
       type: object
 info:
   title: pitchondb
-  version: dev
+  version: 5acaeeb-dirty
 openapi: 3.1.0
 paths:
   /health:
@@ -324,3 +326,23 @@ paths:
                 $ref: "#/components/schemas/ErrorModel"
           description: Error
       summary: Add Pigeon
+  /v1/pigeons/{id}:
+    delete:
+      operationId: delete-v1-pigeons-by-id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "204":
+          description: No Content
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErrorModel"
+          description: Error
+      summary: Remove Pigeon

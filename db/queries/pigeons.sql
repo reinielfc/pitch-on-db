@@ -23,3 +23,6 @@ LIMIT $1 OFFSET $2;
 
 -- name: CountPigeons :one
 SELECT COUNT(*) FROM pigeons;
+
+-- name: DeletePigeon :exec
+DELETE FROM pigeons WHERE id = $1;

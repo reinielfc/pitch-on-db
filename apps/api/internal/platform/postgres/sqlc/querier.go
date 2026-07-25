@@ -12,6 +12,7 @@ import (
 
 type Querier interface {
 	CountPigeons(ctx context.Context) (int64, error)
+	DeletePigeon(ctx context.Context, id uuid.UUID) error
 	FindPigeonByID(ctx context.Context, id uuid.UUID) (Pigeon, error)
 	ListPigeons(ctx context.Context, arg ListPigeonsParams) ([]PigeonSummary, error)
 	UpsertPigeon(ctx context.Context, arg UpsertPigeonParams) (Pigeon, error)

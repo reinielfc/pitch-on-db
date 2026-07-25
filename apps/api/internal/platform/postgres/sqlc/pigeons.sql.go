@@ -24,6 +24,15 @@ func (q *Queries) CountPigeons(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const deletePigeon = `-- name: DeletePigeon :exec
+DELETE FROM pigeons WHERE id = $1
+`
+
+func (q *Queries) DeletePigeon(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deletePigeon, id)
+	return err
+}
+
 const findPigeonByID = `-- name: FindPigeonByID :one
 SELECT id, name, ring_number, sex, sex_confidence, status, acquired_date, acquired_via, created_at, updated_at FROM pigeons WHERE id = $1
 `

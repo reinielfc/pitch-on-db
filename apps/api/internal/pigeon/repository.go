@@ -14,4 +14,9 @@ type Repository interface {
 
 	// Save creates a new pigeon record or updates an existing one in the database.
 	Save(ctx context.Context, p *Pigeon) error
+
+	// Delete removes a pigeon record from the database by its ID.
+	//
+	// Returns [ErrNotFound] if no pigeon with the given ID exists.
+	Delete(ctx context.Context, id uuid.UUID) error
 }

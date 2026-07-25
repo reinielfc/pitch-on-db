@@ -63,3 +63,11 @@ func (s *pigeonService) UpdatePigeonDetails(ctx context.Context, id uuid.UUID, r
 
 	return nil
 }
+
+func (s *pigeonService) Remove(ctx context.Context, id uuid.UUID) error {
+	// TODO: Instead of deleting the pigeon, we should mark it as inactive or archived to maintain historical data.
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return fmt.Errorf("delete pigeon: %w", err)
+	}
+	return nil
+}
