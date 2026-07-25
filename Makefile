@@ -1,4 +1,4 @@
-# ---- Config ------------------------------------------------------------------
+## Config
 
 ENV_FILE := .env
 
@@ -19,18 +19,11 @@ POSTGRES_PORT     ?= 5432
 POSTGRES_DB       ?= pitchondb
 POSTGRES_SSLMODE  ?= disable
 
-POSTGRES_URL := host=$(POSTGRES_HOST) port=$(POSTGRES_PORT) \
-	user=$(POSTGRES_USER) password=$(POSTGRES_PASSWORD) \
-	dbname=$(POSTGRES_DB) sslmode=$(POSTGRES_SSLMODE)
+##@ Docker
 
-DOCKER_COMPOSE := $(or $(shell command -v docker-compose),$(shell command -v docker) compose,docker compose)\
-	-f docker-compose.yml -f docker-compose.dev.yml
+DOCKER_COMMANDS := up stop down logs ps
 
-# ---- Docker ------------------------------------------------------------------
-
-DOCKER_TARGETS := up stop down logs ps
-
-.PHONY: $(addprefix docker-,$(DOCKER_TARGETS)) $(DOCKER_TARGETS)
+.PHONY: $(DOCKER_COMMANDS) $(addprefix docker-,$(DOCKER_COMMANDS))
 
 up: docker-up ## Start Docker services
 docker-up:
@@ -52,45 +45,69 @@ ps: docker-ps ## List Docker services
 docker-ps:
 	$(DOCKER_COMPOSE) ps
 
-.PHONY: $(addprefix start-,web api postgres grafana)
+##@ Services
 
-start-web: ## Start Web service
+DOCKER_SERVICES := web api postgres grafana
+
+.PHONY: $(DOCKER_SERVICES) \
+	$(addprefix start-,$(DOCKER_SERVICES)) $(addprefix service-,$(addsuffix -start,$(DOCKER_SERVICES))) \
+	$(addprefix follow-,api postgres)      $(addprefix service-,$(addsuffix -follow,api postgres)) \
+	$(addprefix reset-,postgres)           $(addprefix service-,$(addsuffix -reset,postgres))
+
+start-web: service-web-start ## Start Web service
+service-web-start:
 	$(DOCKER_COMPOSE) build web
 	$(DOCKER_COMPOSE) up web
 
-start-api: ## Start API service
+start-api: service-api-start ## Start API service
+service-api-start:
 	$(DOCKER_COMPOSE) build api
 	$(DOCKER_COMPOSE) up api
 
-start-postgres: ## Start Postgres service
+start-postgres: service-postgres-start ## Start Postgres service
+service-postgres-start:
 	$(DOCKER_COMPOSE) up postgres
 
-start-grafana: ## Start Grafana service
+start-grafana: service-grafana-start ## Start Grafana service
+service-grafana-start:
 	$(DOCKER_COMPOSE) up grafana
 
-.PHONY: $(addprefix follow-,api postgres)
-
 follow-api: ## Follow API service logs
+service-api-follow:
 	$(DOCKER_COMPOSE) logs -f api
 
 follow-postgres: ## Follow Postgres service logs
+service-postgres-follow:
 	$(DOCKER_COMPOSE) logs -f postgres
 
-.PHONY: reset-postgres
-
 reset-postgres: ## Reset Postgres service (stop, remove, and start)
+service-postgres-reset:
 	$(DOCKER_COMPOSE) down -v postgres
 	$(DOCKER_COMPOSE) up -d postgres
 
-# ---- Codegen -----------------------------------------------------------------
+DOCKER_COMPOSE := $(or $(shell command -v docker-compose),docker compose) \
+	-f docker-compose.yml -f docker-compose.dev.yml
+
+##@ Code Generation
 
 .PHONY: sqlc $(addprefix generate-,sqlc)
 
-sqlc: generate-sqlc ## Generate SQL code
+sqlc: generate-sqlc ## Generate SQL code (requires: sqlc)
 generate-sqlc:
 	$(GO) tool sqlc generate -f $(SQLC_CONFIG)
 
-# ---- Postgres / Migrations ---------------------------------------------------
+schema: generate-schema ## Generate OpenAPI spec and Schema
+generate-schema:
+	$(MAKE) -C apps/api generate-spec
+	$(MAKE) -C apps/web generate-schema
+
+##@ Postgres
+
+POSTGRES_URL := host=$(POSTGRES_HOST) port=$(POSTGRES_PORT) \
+	user=$(POSTGRES_USER) password=$(POSTGRES_PASSWORD) \
+	dbname=$(POSTGRES_DB) sslmode=$(POSTGRES_SSLMODE)
+
+GOOSE_FLAGS := -dir $(MIGRATIONS) postgres '$(POSTGRES_URL)'
 
 .PHONY: migrate rollback $(addprefix goose-,up down)
 
@@ -102,40 +119,22 @@ rollback: goose-down ## Rollback database migrations
 goose-down:
 	$(GO) tool goose $(GOOSE_FLAGS) down
 
-GOOSE_FLAGS := -dir $(MIGRATIONS) postgres '$(POSTGRES_URL)'
-
-# ---- API ---------------------------------------------------------------------
-
-.PHONY: $(addprefix api.,build test run healthcheck clean)
-
-api.build: ## (API) Build the application
-	$(MAKE) -C ./apps/api build
-
-api.test: ## (API) Run tests for the application
-	$(MAKE) -C ./apps/api test
-
-api.run: ## (API) Run the application
-	$(MAKE) -C ./apps/api run
-
-api.healthcheck: ## (API) Perform health check on the application
-	$(MAKE) -C ./apps/api healthcheck
-
-api.clean: ## (API) Clean build artifacts for the application
-	$(MAKE) -C ./apps/api clean
-
-# ---- Tools -------------------------------------------------------------------
+##@ Development Tools
 
 .PHONY: tools
 
 tools: ## Install required tools
 	cd tools && $(GO) install tool
 
-# ---- Housekeeping ------------------------------------------------------------
+##@ Housekeeping
 
 .PHONY: help
 
 help: ## Show this help message
-	@echo -e "Usage: make [target]\n"
-	@grep -hE '^[a-zA-Z_.-]+:.*?## .*$$' $(MAKEFILE_LIST) \
-		| awk 'BEGIN {FS = ":.*?## "}; {printf "\t%-20s %s\n", $$1, $$2}'
+	@echo "Usage: make [target]"
+	@echo
+	@awk 'BEGIN {FS = ":.*?## "} \
+		/^[a-zA-Z_.-]+:.*?## / { printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2 } \
+		/^##@ / { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) }' \
+		$(MAKEFILE_LIST)
 	@echo
