@@ -4,6 +4,9 @@ import (
 	"context"
 	"net/http"
 	"time"
+
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi/routes"
 )
 
 type HealthHandler struct {
@@ -20,6 +23,10 @@ func NewHealthHandler(startupTime time.Time, version string, gitCommit string, b
 		gitCommit:   gitCommit,
 		buildTime:   buildTime,
 	}
+}
+
+func (h *HealthHandler) RegisterRoutes(api huma.API) {
+	huma.Get(api, "/health", h.Check, routes.WithSummary("Health Check"))
 }
 
 type HealthCheckOutput struct {

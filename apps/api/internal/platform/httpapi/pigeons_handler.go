@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/reinielfc/pitchondb/apps/api/internal/pigeon"
+	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi/routes"
 )
 
 type PigeonsHandler struct {
@@ -15,6 +17,14 @@ type PigeonsHandler struct {
 
 func NewPigeonsHandler(svc pigeon.Service, query pigeon.QueryService) *PigeonsHandler {
 	return &PigeonsHandler{svc: svc, query: query}
+}
+
+func (h *PigeonsHandler) RegisterRoutes(api huma.API) {
+	pigeons := huma.NewGroup(api, "/pigeons")
+	{
+		huma.Get(pigeons, "", h.List, routes.WithSummary("List Pigeons"))
+		huma.Post(pigeons, "", h.Add, routes.WithSummary("Add Pigeon"))
+	}
 }
 
 type ListPigeonsInput struct {

@@ -13,6 +13,8 @@ import (
 	"github.com/reinielfc/pitchondb/apps/api/internal/config"
 	"github.com/reinielfc/pitchondb/apps/api/internal/pigeon"
 	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi"
+	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi/middleware"
+	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi/routes"
 	"github.com/reinielfc/pitchondb/apps/api/internal/platform/postgres"
 	"github.com/reinielfc/pitchondb/apps/api/internal/telemetry"
 	"github.com/spf13/cobra"
@@ -45,12 +47,17 @@ func main() {
 		// Wire up services
 		pigeonSvc := pigeon.NewService(pigeonRepo)
 
+		// Wire up handlers
+		healthHandler := httpapi.NewHealthHandler(startupTime, Version, GitCommit, buildTime())
+		pigeonsHandler := httpapi.NewPigeonsHandler(pigeonSvc, pigeonQuery)
+
 		// Set up HTTP API
-		router := httpapi.SetupRouter(&api,
-			httpapi.DefaultConfig(opts.Name, Version),
-			httpapi.WithHealthRoute(startupTime, Version, GitCommit, buildTime()),
-			httpapi.WithGroupRoutes("/v1",
-				httpapi.WithPigeonRoutes(pigeonSvc, pigeonQuery),
+		router := routes.NewRouter(&api,
+			huma.DefaultConfig(opts.Name, Version),
+			routes.WithHandlers(healthHandler),
+			routes.WithGroup("/v1",
+				routes.WithMiddleware(middleware.LogRequests()),
+				routes.WithHandlers(pigeonsHandler),
 			),
 		)
 
