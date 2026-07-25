@@ -26,12 +26,14 @@ type PigeonList struct {
 }
 
 type PigeonSummary struct {
-	ID            UUID                 `json:"id" doc:"Unique identifier of the pigeon" example:"550e8400-e29b-41d4-a716-446655440000"`
-	Name          *string              `json:"name,omitempty" doc:"Name of the pigeon" example:"Buffy"`
-	RingNumber    *string              `json:"ringNumber,omitempty" doc:"Ring number of the pigeon" example:"RN-12345"`
-	Sex           PigeonSex            `json:"sex"`
-	SexConfidence *PigeonSexConfidence `json:"sexConfidence,omitempty"`
-	Status        PigeonStatus         `json:"status"`
+	ID            UUID                    `json:"id" doc:"Unique identifier of the pigeon" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Name          *string                 `json:"name,omitempty" doc:"Name of the pigeon" example:"Buffy"`
+	RingNumber    *string                 `json:"ringNumber,omitempty" doc:"Ring number of the pigeon" example:"RN-12345"`
+	Sex           PigeonSex               `json:"sex"`
+	SexConfidence *PigeonSexConfidence    `json:"sexConfidence,omitempty"`
+	Status        PigeonStatus            `json:"status"`
+	AcquiredDate  *time.Time              `json:"acquiredDate,omitempty" doc:"Date when the pigeon was acquired" example:"2023-01-01T00:00:00Z"`
+	AcquiredVia   PigeonAcquisitionMethod `json:"acquiredVia"`
 }
 
 type PigeonSex string
@@ -97,6 +99,8 @@ func fromDomainPigeonSummary(s pigeon.Summary) PigeonSummary {
 		Sex:           enums.AsType[PigeonSex](s.Sex),
 		SexConfidence: enums.AsPtrType[PigeonSexConfidence](s.SexConfidence),
 		Status:        enums.AsType[PigeonStatus](s.Status),
+		AcquiredDate:  s.AcquiredDate,
+		AcquiredVia:   enums.AsType[PigeonAcquisitionMethod](s.AcquiredVia),
 	}
 }
 
