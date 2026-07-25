@@ -6,7 +6,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/reinielfc/pitchondb/apps/api/internal/pigeon"
 	"github.com/reinielfc/pitchondb/apps/api/internal/utils/enums"
-	"github.com/reinielfc/pitchondb/apps/api/internal/utils/slices"
+	"github.com/reinielfc/pitchondb/apps/api/internal/utils/slicesx"
 )
 
 type Pigeon struct {
@@ -40,7 +40,7 @@ func (s PigeonSex) Schema(r huma.Registry) *huma.Schema {
 	return &huma.Schema{
 		Type:        "string",
 		Description: "Sex of the pigeon",
-		Enum:        slices.Map(pigeon.SexStrings(), stringToAny),
+		Enum:        slicesx.AsAny(pigeon.SexStrings()),
 	}
 }
 
@@ -50,7 +50,7 @@ func (s PigeonSexConfidence) Schema(r huma.Registry) *huma.Schema {
 	return &huma.Schema{
 		Type:        "string",
 		Description: "Confidence level of the sex determination",
-		Enum:        slices.Map(pigeon.SexConfidenceStrings(), stringToAny),
+		Enum:        slicesx.AsAny(pigeon.SexConfidenceStrings()),
 	}
 }
 
@@ -60,7 +60,7 @@ func (s PigeonStatus) Schema(r huma.Registry) *huma.Schema {
 	return &huma.Schema{
 		Type:        "string",
 		Description: "Status of the pigeon",
-		Enum:        slices.Map(pigeon.StatusStrings(), stringToAny),
+		Enum:        slicesx.AsAny(pigeon.StatusStrings()),
 	}
 }
 
@@ -70,7 +70,7 @@ func (s PigeonAcquisitionMethod) Schema(r huma.Registry) *huma.Schema {
 	return &huma.Schema{
 		Type:        "string",
 		Description: "Method of acquisition of the pigeon",
-		Enum:        slices.Map(pigeon.AcquisitionMethodStrings(), stringToAny),
+		Enum:        slicesx.AsAny(pigeon.AcquisitionMethodStrings()),
 	}
 }
 
@@ -101,5 +101,5 @@ func fromDomainPigeonSummary(s pigeon.Summary) PigeonSummary {
 }
 
 func mapFromDomainPigeonSummaries(summaries []pigeon.Summary) []PigeonSummary {
-	return slices.Map(summaries, fromDomainPigeonSummary)
+	return slicesx.Map(summaries, fromDomainPigeonSummary)
 }

@@ -54,5 +54,3 @@ func (List[T]) Schema(r huma.Registry) *huma.Schema {
 		Items: r.Schema(t, true, t.Name()),
 	}
 }
-
-func stringToAny(v string) any { return v }
