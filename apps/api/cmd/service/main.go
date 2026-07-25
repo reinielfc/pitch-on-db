@@ -10,6 +10,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/humacli"
+	"github.com/joho/godotenv"
 	"github.com/reinielfc/pitchondb/apps/api/internal/config"
 	"github.com/reinielfc/pitchondb/apps/api/internal/pigeon"
 	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi/handlers"
@@ -29,6 +30,8 @@ var (
 type Deps struct{ api huma.API }
 
 func main() {
+	_ = godotenv.Load() // Load environment variables from .env file if it exists
+
 	startupTime := time.Now()
 
 	var deps = &Deps{}
