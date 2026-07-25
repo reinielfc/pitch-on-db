@@ -49,6 +49,9 @@ dev: .env.development ## Run service with live reload
 		--build.cmd="$(GO) build $(BUILD_FLAGS) \
 		-o ./tmp/main $(CMD_PATH)"
 
+godoc: ## Run godoc server
+	$(GO) run golang.org/x/pkgsite/cmd/pkgsite@latest -http=localhost:6060
+
 healthcheck: ## Perform health check on service
 	$(GO) run $(BUILD_FLAGS) $(CMD_PATH) healthcheck -r 3 -i 2s
 
