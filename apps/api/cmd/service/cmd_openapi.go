@@ -5,11 +5,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/danielgtaylor/huma/v2"
 	"github.com/spf13/cobra"
 )
 
-func openapiCmd(api huma.API) *cobra.Command {
+func (d *Deps) openapiCmd() *cobra.Command {
 	var output string
 
 	openapiCmd := &cobra.Command{
@@ -17,11 +16,11 @@ func openapiCmd(api huma.API) *cobra.Command {
 		Short: "Generate OpenAPI specification",
 		Run: func(cmd *cobra.Command, args []string) {
 			log.Println("Generating OpenAPI specification...")
-			if api == nil {
+			if d.api == nil {
 				must(fmt.Errorf("API is not initialized"), "failed to generate OpenAPI spec")
 			}
 
-			b, err := api.OpenAPI().YAML()
+			b, err := d.api.OpenAPI().YAML()
 			must(err, "failed to generate OpenAPI spec")
 
 			if output == "" {

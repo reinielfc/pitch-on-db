@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func healthcheckCmd() *cobra.Command {
+func (Deps) healthcheckCmd() *cobra.Command {
 	var interval string
 	var retries int
 

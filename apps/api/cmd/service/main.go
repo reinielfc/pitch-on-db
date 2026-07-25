@@ -21,15 +21,17 @@ import (
 )
 
 var (
-	Version   = "dev"
-	GitCommit = "unknown"
-	BuildTime = "unknown"
+	version   = "dev"
+	gitCommit = "unknown"
+	buildTime = "unknown"
 )
+
+type Deps struct{ api huma.API }
 
 func main() {
 	startupTime := time.Now()
 
-	var api huma.API
+	var deps = &Deps{}
 
 	cli := humacli.New(func(hooks humacli.Hooks, opts *config.Options) {
 		// Set up logging and telemetry
@@ -48,12 +50,12 @@ func main() {
 		pigeonSvc := pigeon.NewService(pigeonRepo)
 
 		// Wire up handlers
-		healthHandler := handlers.NewHealthHandler(startupTime, Version, GitCommit, buildTime())
+		healthHandler := handlers.NewHealthHandler(startupTime, version, gitCommit, parseBuildTime())
 		pigeonsHandler := handlers.NewPigeonsHandler(pigeonSvc, pigeonQuery)
 
 		// Set up HTTP API
-		router := routes.NewRouter(&api,
-			huma.DefaultConfig(opts.Name, Version),
+		router := routes.NewRouter(&deps.api,
+			huma.DefaultConfig(opts.Name, version),
 			routes.WithHandlers(healthHandler),
 			routes.WithGroup("/v1",
 				routes.WithMiddleware(middleware.LogRequests()),
@@ -69,7 +71,7 @@ func main() {
 
 		// Start the server
 		hooks.OnStart(func() {
-			slog.Info("starting server", "version", Version, "port", opts.Port)
+			slog.Info("starting server", "version", version, "port", opts.Port)
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				slog.Error("server listen", "error", err)
 			}
@@ -89,7 +91,7 @@ func main() {
 		})
 	})
 
-	cli.Root().AddCommand(healthcheckCmd(), openapiCmd(api))
+	cli.Root().AddCommand(deps.healthcheckCmd(), deps.openapiCmd())
 	cli.Root().PersistentFlags().SortFlags = false
 	cli.Root().Flags().SortFlags = false
 	cobra.EnableCommandSorting = false
@@ -97,10 +99,10 @@ func main() {
 	cli.Run()
 }
 
-func buildTime() time.Time {
-	t, err := time.Parse(time.RFC3339, BuildTime)
+func parseBuildTime() time.Time {
+	t, err := time.Parse(time.RFC3339, buildTime)
 	if err != nil {
-		slog.Warn("failed to parse build time", "buildTime", BuildTime, "error", err)
+		slog.Warn("failed to parse build time", "buildTime", buildTime, "error", err)
 		return time.Time{}
 	}
 	return t
