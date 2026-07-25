@@ -12,7 +12,7 @@ import (
 	"github.com/danielgtaylor/huma/v2/humacli"
 	"github.com/reinielfc/pitchondb/apps/api/internal/config"
 	"github.com/reinielfc/pitchondb/apps/api/internal/pigeon"
-	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi"
+	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi/handlers"
 	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi/middleware"
 	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi/routes"
 	"github.com/reinielfc/pitchondb/apps/api/internal/platform/postgres"
@@ -48,8 +48,8 @@ func main() {
 		pigeonSvc := pigeon.NewService(pigeonRepo)
 
 		// Wire up handlers
-		healthHandler := httpapi.NewHealthHandler(startupTime, Version, GitCommit, buildTime())
-		pigeonsHandler := httpapi.NewPigeonsHandler(pigeonSvc, pigeonQuery)
+		healthHandler := handlers.NewHealthHandler(startupTime, Version, GitCommit, buildTime())
+		pigeonsHandler := handlers.NewPigeonsHandler(pigeonSvc, pigeonQuery)
 
 		// Set up HTTP API
 		router := routes.NewRouter(&api,

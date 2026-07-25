@@ -11,7 +11,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2/humacli"
 	"github.com/reinielfc/pitchondb/apps/api/internal/config"
-	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi"
+	"github.com/reinielfc/pitchondb/apps/api/internal/platform/httpapi/handlers"
 	"github.com/spf13/cobra"
 )
 
@@ -45,8 +45,8 @@ func healthcheckCmd() *cobra.Command {
 	return healthCheckCmd
 }
 
-func pollHealth(url string, retries int, interval time.Duration) (*httpapi.HealthCheckOutput, error) {
-	var lastOutput *httpapi.HealthCheckOutput
+func pollHealth(url string, retries int, interval time.Duration) (*handlers.HealthCheckOutput, error) {
+	var lastOutput *handlers.HealthCheckOutput
 	for attempt := 1; attempt <= retries; attempt++ {
 		log.Printf("Checking API service health (attempt %d/%d)...", attempt, retries)
 
@@ -68,7 +68,7 @@ func pollHealth(url string, retries int, interval time.Duration) (*httpapi.Healt
 	return lastOutput, fmt.Errorf("API service is unhealthy after %d attempt(s)", retries)
 }
 
-func fetchHealth(url string) (*httpapi.HealthCheckOutput, error) {
+func fetchHealth(url string) (*handlers.HealthCheckOutput, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -84,12 +84,12 @@ func fetchHealth(url string) (*httpapi.HealthCheckOutput, error) {
 		return nil, fmt.Errorf("failed to read health response body: %w", err)
 	}
 
-	var healthStatus httpapi.HealthStatus
+	var healthStatus handlers.HealthStatus
 	if err := json.Unmarshal(body, &healthStatus); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal health response: %w", err)
 	}
 
-	return &httpapi.HealthCheckOutput{
+	return &handlers.HealthCheckOutput{
 		Status: resp.StatusCode,
 		Body:   healthStatus,
 	}, nil
