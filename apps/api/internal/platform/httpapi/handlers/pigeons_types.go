@@ -10,7 +10,7 @@ import (
 )
 
 type Pigeon struct {
-	ID            string                  `json:"id" doc:"Unique identifier of the pigeon" example:"550e8400-e29b-41d4-a716-446655440000"`
+	ID            UUID                    `json:"id" doc:"Unique identifier of the pigeon" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Name          *string                 `json:"name,omitempty" doc:"Name of the pigeon" example:"Buffy"`
 	RingNumber    *string                 `json:"ringNumber,omitempty" doc:"Ring number of the pigeon" example:"RN-12345"`
 	Sex           PigeonSex               `json:"sex"`
@@ -26,7 +26,7 @@ type PigeonList struct {
 }
 
 type PigeonSummary struct {
-	ID            string               `json:"id" doc:"Unique identifier of the pigeon" example:"550e8400-e29b-41d4-a716-446655440000"`
+	ID            UUID                 `json:"id" doc:"Unique identifier of the pigeon" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Name          *string              `json:"name,omitempty" doc:"Name of the pigeon" example:"Buffy"`
 	RingNumber    *string              `json:"ringNumber,omitempty" doc:"Ring number of the pigeon" example:"RN-12345"`
 	Sex           PigeonSex            `json:"sex"`
@@ -78,7 +78,7 @@ func fromDomainPigeon(p *pigeon.Pigeon) Pigeon {
 	s := p.Snapshot()
 
 	return Pigeon{
-		ID:            s.ID.String(),
+		ID:            fromUUID(s.ID),
 		Name:          s.Name,
 		RingNumber:    s.RingNumber,
 		Sex:           enums.AsType[PigeonSex](s.Sex),
@@ -91,7 +91,7 @@ func fromDomainPigeon(p *pigeon.Pigeon) Pigeon {
 
 func fromDomainPigeonSummary(s pigeon.Summary) PigeonSummary {
 	return PigeonSummary{
-		ID:            s.ID.String(),
+		ID:            fromUUID(s.ID),
 		Name:          s.Name,
 		RingNumber:    s.RingNumber,
 		Sex:           enums.AsType[PigeonSex](s.Sex),
