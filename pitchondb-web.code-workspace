@@ -28,23 +28,22 @@
         "version": "0.2.0",
         "configurations": [
             {
-                "type": "chrome",
-                "request": "launch",
-                "name": "Debug: Web (Chrome)",
+                "name": "Debug (Chrome)",
+                "type": "chrome", "request": "launch",
                 "url": "http://localhost:5173",
                 "webRoot": "${workspaceFolder:Web}",
                 "sourceMaps": true,
                 "preLaunchTask": "backend:up+dev"
             },
             {
-                "name": "Attach to Chrome",
+                "name": "Attach (Chrome)",
                 "type": "chrome", "request": "attach", "port": 9222,
                 "url": "http://localhost:5173/pigeons",
                 "webRoot": "${workspaceFolder:Web}",
                 "preLaunchTask": "backend:up+dev",
             },
             {
-                "name": "Launch Editor",
+                "name": "Launch (Editor)",
                 "type": "editor-browser", "request": "launch",
                 "url": "http://localhost:5173/pigeons",
                 "webRoot": "${workspaceFolder:Web}",
@@ -79,7 +78,7 @@
             {
                 "label": "backend:up", "detail": "Wait for the backend to start in detached mode",
                 "icon": { "color": "terminal.ansiBlue", "id": "server" },
-                "type": "shell", "command": "make", "args": ["web:backend:up"],
+                "type": "shell", "command": "task", "args": ["web:backend:up"],
                 "options": { "cwd": "${workspaceFolder:Root}" },
                 "problemMatcher": []
             },
