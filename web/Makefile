@@ -46,6 +46,14 @@ format: ## Format with prettier
 check: ## svelte-check + tsc type checking
 	$(PNPM) check
 
+##@ Code Generation
+
+.PHONY: schema generate-schema
+
+schema: generate-schema ## [generate] API schema types
+generate-schema:
+	$(PNPM) run gen:schema
+
 ##@ Housekeeping
 
 .PHONY: help
