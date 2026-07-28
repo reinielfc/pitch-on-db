@@ -75,7 +75,7 @@ components:
             - "2023-01-01T00:00:00Z"
           format: date-time
           type: string
-        gitCommit:
+        commit:
           description: Git commit hash of the application
           examples:
             - abc123
@@ -105,7 +105,7 @@ components:
         - status
         - timestamp
         - version
-        - gitCommit
+        - commit
         - buildTime
         - uptime
       type: object
@@ -206,6 +206,21 @@ components:
     PigeonSummary:
       additionalProperties: false
       properties:
+        acquiredDate:
+          description: Date when the pigeon was acquired
+          examples:
+            - "2023-01-01T00:00:00Z"
+          format: date-time
+          type: string
+        acquiredVia:
+          description: Method of acquisition of the pigeon
+          enum:
+            - bred
+            - purchased
+            - gifted
+            - captured
+            - unknown
+          type: string
         id:
           description: Unique identifier of the pigeon
           examples:
@@ -248,10 +263,11 @@ components:
         - id
         - sex
         - status
+        - acquiredVia
       type: object
 info:
   title: pitchondb
-  version: 5acaeeb-dirty
+  version: cc1fb91-dirty
 openapi: 3.1.0
 paths:
   /health:
