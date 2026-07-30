@@ -44,3 +44,14 @@ func (o PostgresOptions) LogValue() slog.Value {
 		slog.String("sslmode", o.SSLMode),
 	)
 }
+
+//go:generate go tool enumer -type=AppEnv -trimprefix=AppEnv -transform=snake -values -output=options_enumer.go
+
+type AppEnv int
+
+const (
+	// AppEnvDev represents the development environment.
+	AppEnvDev AppEnv = iota
+	// AppEnvProd represents the production environment.
+	AppEnvProd
+)
