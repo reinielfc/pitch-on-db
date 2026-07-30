@@ -33,7 +33,7 @@ func (Deps) healthcheckCmd() *cobra.Command {
 			slog.Info("API service is healthy",
 				"status", res.Status,
 				"version", res.Body.Version,
-				"gitCommit", res.Body.GitCommit,
+				"commit", res.Body.Commit,
 				"buildTime", res.Body.BuildTime,
 				"uptime", res.Body.Uptime,
 			)
