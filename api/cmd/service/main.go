@@ -6,12 +6,10 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/humacli"
-	"github.com/joho/godotenv"
 	"github.com/reinielfc/pitchondb/api/internal/config"
 	"github.com/reinielfc/pitchondb/api/internal/pigeon"
 	"github.com/reinielfc/pitchondb/api/internal/platform/httpapi/handlers"
@@ -24,45 +22,44 @@ import (
 
 var (
 	version   = "dev"
-	gitCommit = "unknown"
+	commit    = "unknown"
 	buildTime = "unknown"
 )
 
 type Deps struct{ api huma.API }
 
 func main() {
-	_ = godotenv.Load() // Load environment variables from .env file if it exists
-
 	startupTime := time.Now()
 
 	var deps = &Deps{}
 
 	cli := humacli.New(func(hooks humacli.Hooks, opts *config.Options) {
 		// Determine if the environment is development
-		envIsDev := strings.HasPrefix(opts.Env, "dev")
+		appEnv, err := config.AppEnvString(opts.Env)
+		must(err, "invalid application environment", "env", opts.Env)
 
 		// Set up logging and telemetry
-		telemetry.SetupLogging(envIsDev)
+		telemetry.SetupLogging(appEnv == config.AppEnvDev)
 
 		// Connect to the database
-		postgresDB, err := postgres.Connect(opts.Postgres.ConnectionString())
+		db, err := postgres.Open(opts.Postgres.ConnectionString())
 		must(err, "failed to connect to database", "config", opts.Postgres)
 		slog.Info("connected to database", "config", opts.Postgres)
 
 		// Set up repositories
-		pigeonRepo := postgres.NewPigeonRepository(postgresDB)
-		pigeonQuery := postgres.NewPigeonQueryService(postgresDB)
+		pigeonRepo := postgres.NewPigeonRepository(db)
+		pigeonQuery := postgres.NewPigeonQueryService(db)
 
 		// Wire up services
 		pigeonSvc := pigeon.NewService(pigeonRepo)
 
 		// Wire up handlers
-		healthHandler := handlers.NewHealthHandler(startupTime, version, gitCommit, parseBuildTime())
+		healthHandler := handlers.NewHealthHandler(startupTime, version, commit, parseBuildTime())
 		pigeonsHandler := handlers.NewPigeonsHandler(pigeonSvc, pigeonQuery)
 
 		// Set up HTTP API
 		router := routes.NewRouter(&deps.api,
-			huma.DefaultConfig(opts.Name, version),
+			routes.NewRouterConfig(opts.Name, version, appEnv),
 			routes.WithHandlers(healthHandler),
 			routes.WithGroup("/v1",
 				routes.WithMiddleware(middleware.LogRequests()),
@@ -78,7 +75,16 @@ func main() {
 
 		// Start the server
 		hooks.OnStart(func() {
-			slog.Info("starting server", "version", version, "port", opts.Port)
+			slog.Info("starting server",
+				"port", opts.Port,
+				"version", version,
+				"commit", commit,
+				"buildTime", buildTime,
+			)
+			if err = db.Ping(); err != nil {
+				slog.Error("ping database", "error", err)
+			}
+
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				slog.Error("server listen", "error", err)
 			}
@@ -92,7 +98,7 @@ func main() {
 				slog.Error("server shutdown", "error", err)
 			}
 
-			if err := postgresDB.Close(); err != nil {
+			if err := db.Close(); err != nil {
 				slog.Error("database close", "error", err)
 			}
 		})
