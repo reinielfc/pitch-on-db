@@ -86,7 +86,7 @@ func (p *Pigeon) Snapshot() Snapshot {
 	}
 }
 
-//go:generate go tool enumer -type=Sex,SexConfidence,Status,AcquisitionMethod -trimprefix=SexConfidence,Sex,Status,AcquisitionMethod -transform=snake -values -output=types_enumer.go
+//go:generate go tool enumer -type=Sex,SexConfidence,Status,AcquisitionMethod -trimprefix=SexConfidence,Sex,Status,AcquisitionMethod -transform=snake -values -output=domain_enumer.go
 
 // Sex encodes the sex of a pigeon.
 type Sex int
