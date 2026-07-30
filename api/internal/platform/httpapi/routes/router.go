@@ -8,12 +8,35 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humagin"
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
+	"github.com/reinielfc/pitchondb/api/internal/config"
 	"github.com/reinielfc/pitchondb/api/internal/platform/httpapi/middleware"
 )
 
+type RouterConfig struct {
+	title   string
+	version string
+	appEnv  config.AppEnv
+}
+
+func NewRouterConfig(title, version string, appEnv config.AppEnv) RouterConfig {
+	return RouterConfig{
+		title:   title,
+		version: version,
+		appEnv:  appEnv,
+	}
+}
+
+func (c RouterConfig) humaConfig() huma.Config {
+	return huma.DefaultConfig(c.title, c.version)
+}
+
 type Route func(api huma.API)
 
-func NewRouter(api *huma.API, config huma.Config, routes ...Route) *gin.Engine {
+func NewRouter(api *huma.API, cfg RouterConfig, routes ...Route) *gin.Engine {
+	if cfg.appEnv == config.AppEnvProd {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	router := gin.New()
 	router.Use(
 		// Handle panics and return 500 Internal Server Error
@@ -24,7 +47,7 @@ func NewRouter(api *huma.API, config huma.Config, routes ...Route) *gin.Engine {
 		middleware.BridgeRequestID(),
 	)
 
-	humaAPI := humagin.New(router, config)
+	humaAPI := humagin.New(router, cfg.humaConfig())
 
 	for _, route := range routes {
 		route(humaAPI)
