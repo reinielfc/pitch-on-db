@@ -1,0 +1,93 @@
+{
+    "folders": [
+        { "name": "Source", "path": "web/src" },
+        { "name": "Web",  "path": "web" },
+        { "name": "Root", "path": "." },
+    ],
+    "extensions": { "recommendations": [
+        "svelte.svelte-vscode",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        "EditorConfig.EditorConfig",
+    ]},
+    "settings": {
+        "editor.rulers": [80, 100],
+        "files.exclude": {
+            ".svelte-kit": true,
+            "database": true,
+            "node_modules": true,
+            "src": true,
+        },
+        "files.associations": { "*.css": "tailwindcss" },
+        "terminal.integrated.cwd": "${workspaceFolder:Root}",
+        "terminal.integrated.env.linux": { "TARGET_APP": "web" },
+        "tailwindCSS.emmetCompletions": true,
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "type": "chrome",
+                "request": "launch",
+                "name": "Debug: Web (Chrome)",
+                "url": "http://localhost:5173",
+                "webRoot": "${workspaceFolder:Web}",
+                "sourceMaps": true,
+                "preLaunchTask": "backend:up+dev"
+            },
+            {
+                "name": "Attach to Chrome",
+                "type": "chrome", "request": "attach", "port": 9222,
+                "url": "http://localhost:5173/pigeons",
+                "webRoot": "${workspaceFolder:Web}",
+                "preLaunchTask": "backend:up+dev",
+            },
+            {
+                "name": "Launch Editor",
+                "type": "editor-browser", "request": "launch",
+                "url": "http://localhost:5173/pigeons",
+                "webRoot": "${workspaceFolder:Web}",
+                "preLaunchTask": "backend:up+dev"
+            }
+        ],
+        "compounds": []
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "dev", "detail": "Run dev server",
+                "icon": { "color": "terminal.ansiGreen", "id": "play" },
+                "type": "shell", "command": "pnpm", "args": ["dev", "--strictPort"],
+                "isBackground": true,
+                "options": { "cwd": "${workspaceFolder:Web}" },
+                "problemMatcher": {
+                    "owner": "vite",
+                    "fileLocation": ["relative", "${workspaceFolder:Web}"],
+                    "pattern": {
+                        "regexp": "^\\s*(.*):(\\d+):(\\d+)$",
+                        "file": 1, "line": 2, "column": 3
+                    },
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": "VITE v",
+                        "endsPattern": "ready in \\d+ ms"
+                    }
+                },
+            },
+            {
+                "label": "backend:up", "detail": "Wait for the backend to start in detached mode",
+                "icon": { "color": "terminal.ansiBlue", "id": "server" },
+                "type": "shell", "command": "make", "args": ["web:backend:up"],
+                "options": { "cwd": "${workspaceFolder:Root}" },
+                "problemMatcher": []
+            },
+            {
+                "hide": true, "label": "backend:up+dev",
+                "dependsOrder": "sequence", "dependsOn": ["backend:up", "dev"],
+                "problemMatcher": []
+            }
+        ]
+    }
+}
