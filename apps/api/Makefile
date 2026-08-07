@@ -1,4 +1,4 @@
-# ---- Config ------------------------------------------------------------------
+## Config
 
 APP_NAME    := pitchondb
 BIN_DIR     := ./bin
@@ -8,65 +8,54 @@ BINARY_PATH := $(BIN_DIR)/$(APP_NAME)
 GO ?= go
 GOFLAGS :=
 LDFLAGS_STRIP := -s -w
-LDFLAGS_VERSION := \
-	-X main.Version=$(VERSION) \
-	-X main.GitCommit=$(GIT_COMMIT) \
-	-X main.BuildTime=$(BUILD_TIME)
-
 GOLANGCI_LINT_VERSION := v2.11.4
 
 MOCKERY_CONFIG := ./.mockery.yaml
 OPENAPI_SPEC   := ./openapi.yml
 
-# --- Environment --------------------------------------------------------------
+## Environment
 
 GOBIN := $(or $(shell $(GO) env GOBIN),$(shell $(GO) env GOPATH)/bin)
 PATH  := $(PATH):$(GOBIN)
 
-VERSION    := $(shell git describe --tags --always --dirty || echo dev)
-GIT_COMMIT := $(shell git rev-parse --short HEAD || echo unknown)
-BUILD_TIME := $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+LDFLAGS_VERSION := \
+	-X main.version=$(shell git describe --tags --always --dirty || echo dev) \
+	-X main.gitCommit=$(shell git rev-parse --short HEAD || echo unknown) \
+	-X main.buildTime=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
-# --- Tooling ------------------------------------------------------------------
+##@ Tooling
+
+GOLANGCI_LINT_URL := https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
 
 .PHONY: tools
 
 tools: ## Install development tools
 	curl -sSfL $(GOLANGCI_LINT_URL) | sh -s -- -b $(GOBIN) $(GOLANGCI_LINT_VERSION)
 
-GOLANGCI_LINT_URL := https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
+##@ Build / Run
 
-# ---- Build / Run -------------------------------------------------------------
+BUILD_FLAGS = $(GOFLAGS) -ldflags '$(LDFLAGS_STRIP) $(LDFLAGS_VERSION)'
 
 .PHONY: build run dev healthcheck
 
 build: ## Compile service binary
 	$(GO) build $(BUILD_FLAGS) -o $(BINARY_PATH) $(CMD_PATH)
 
-run: ## Run service locally
-	$(GO) run $(CMD_PATH)
+run: .env ## Run service locally
+	$(GO) run $(BUILD_FLAGS) $(CMD_PATH)
 
-dev: export SERVICE_APP_PORT := 8079
-dev: ## Run service with live reload
-	$(GO) tool air $(DEV_AIRFLAGS)
+dev: .env.development ## Run service with live reload
+	$(GO) tool air -c .air.toml \
+		--build.cmd="$(GO) build $(BUILD_FLAGS) \
+		-o ./tmp/main $(CMD_PATH)"
+
+godoc: ## Run godoc server
+	$(GO) run golang.org/x/pkgsite/cmd/pkgsite@latest -http=localhost:6060
 
 healthcheck: ## Perform health check on service
-	$(GO) run $(CMD_PATH) healthcheck -r 3 -i 2s
+	$(GO) run $(BUILD_FLAGS) $(CMD_PATH) healthcheck -r 3 -i 2s
 
-BUILD_FLAGS := $(GOFLAGS) -ldflags "$(LDFLAGS_STRIP) $(LDFLAGS_VERSION)"
-
-DEV_AIRFLAGS := \
-	--build.cmd '$(GO) build $(BUILD_FLAGS) -o ./tmp/main $(CMD_PATH)' \
-	--build.include_ext go \
-	\
-	--misc.startup_banner '' \
-	--misc.clean_on_exit true \
-	\
-	--proxy.enabled true \
-	--proxy.proxy_port 8080 \
-	--proxy.app_port 8079
-
-# ---- Test / Lint -------------------------------------------------------------
+##@ Quality Assurance
 
 .PHONY: test test-cover lint fmt vet
 
@@ -87,15 +76,13 @@ fmt: ## Format code
 vet: ## Vet code
 	$(GO) vet ./...
 
-# ---- Codegen -----------------------------------------------------------------
+##@ Code Generation
 
 .PHONY: generate $(addprefix generate-,enums mocks spec)
 
-generate: enums mocks ## Generate code (enums, mocks)
-
 enums: generate-enums ## Generate code for enums
 generate-enums:
-	$(GO) generate -x -run="github.com/dmarkham/enumer@latest" ./...
+	$(GO) generate -x -run="go tool enumer" ./...
 
 mocks: generate-mocks ## Generate mocks (requires: mockery)
 generate-mocks:
@@ -103,16 +90,9 @@ generate-mocks:
 
 spec: generate-spec ## Generate OpenAPI spec
 generate-spec:
-	$(GO) run $(CMD_PATH) openapi -o $(OPENAPI_SPEC)
+	$(GO) run $(BUILD_FLAGS) $(CMD_PATH) openapi -o $(OPENAPI_SPEC)
 
-# ---- Docker ------------------------------------------------------------------
-
-.PHONY: docker-build
-
-docker-build: ## Build Docker image
-	docker build -t $(APP_NAME):$(VERSION) .
-
-# ---- Housekeeping ------------------------------------------------------------
+##@ Housekeeping
 
 .PHONY: sync clean help
 
@@ -123,7 +103,10 @@ clean: ## Clean up build artifacts
 	rm -rvf tmp; rm -vf $(BINARY_PATH) coverage.out
 
 help: ## Show this help message
-	@echo -e "Usage: make [target]\n"
-	@grep -hE '^[a-zA-Z_.-]+:.*?## .*$$' $(MAKEFILE_LIST) \
-		| awk 'BEGIN {FS = ":.*?## "}; {printf "\t%-16s %s\n", $$1, $$2}'
+	@echo "Usage: make [target]"
+	@echo
+	@awk 'BEGIN {FS = ":.*?## "} \
+		/^[a-zA-Z_.-]+:.*?## / { printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2 } \
+		/^##@ / { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) }' \
+		$(MAKEFILE_LIST)
 	@echo

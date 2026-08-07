@@ -50,6 +50,17 @@ func (r *pigeonRepository) Save(ctx context.Context, p *pigeon.Pigeon) error {
 	return nil
 }
 
+func (r *pigeonRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	err := r.queries.DeletePigeon(ctx, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return pigeon.ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func fromDomainPigeon(p *pigeon.Pigeon) sqlc.Pigeon {
 	s := p.Snapshot()
 	return sqlc.Pigeon{

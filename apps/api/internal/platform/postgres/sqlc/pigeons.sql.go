@@ -24,8 +24,17 @@ func (q *Queries) CountPigeons(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const deletePigeon = `-- name: DeletePigeon :exec
+DELETE FROM pigeons WHERE id = $1
+`
+
+func (q *Queries) DeletePigeon(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deletePigeon, id)
+	return err
+}
+
 const findPigeonByID = `-- name: FindPigeonByID :one
-SELECT id, name, ring_number, sex, sex_confidence, status, acquired_date, acquired_via, created_at, updated_at, pairing_id FROM pigeons WHERE id = $1
+SELECT id, name, ring_number, sex, sex_confidence, status, acquired_date, acquired_via, created_at, updated_at FROM pigeons WHERE id = $1
 `
 
 func (q *Queries) FindPigeonByID(ctx context.Context, id uuid.UUID) (Pigeon, error) {
@@ -42,7 +51,6 @@ func (q *Queries) FindPigeonByID(ctx context.Context, id uuid.UUID) (Pigeon, err
 		&i.AcquiredVia,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.PairingID,
 	)
 	return i, err
 }
@@ -104,7 +112,7 @@ ON CONFLICT (id) DO UPDATE SET
     acquired_date = EXCLUDED.acquired_date,
     acquired_via = EXCLUDED.acquired_via,
     updated_at = now()
-RETURNING id, name, ring_number, sex, sex_confidence, status, acquired_date, acquired_via, created_at, updated_at, pairing_id
+RETURNING id, name, ring_number, sex, sex_confidence, status, acquired_date, acquired_via, created_at, updated_at
 `
 
 type UpsertPigeonParams struct {
@@ -145,7 +153,6 @@ func (q *Queries) UpsertPigeon(ctx context.Context, arg UpsertPigeonParams) (Pig
 		&i.AcquiredVia,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.PairingID,
 	)
 	return i, err
 }

@@ -1,0 +1,13 @@
+[build]
+cmd = "go build -o ./tmp/main -ldflags '-s -w' ./cmd/service"
+entrypoint = ["./tmp/main", "--port", "8079"]
+env_files = [".env.development"]
+
+[misc]
+startup_banner = ""
+clean_on_exit = true
+
+[proxy]
+enable = true
+proxy_port = 8080
+app_port = 8079

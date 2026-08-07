@@ -6,25 +6,20 @@ import (
 )
 
 type Options struct {
-	App      AppOptions
-	Postgres PostgresOptions
-}
-
-type AppOptions struct {
-	Name    string `doc:"The application name" default:"pitchondb"`
-	Env     string `doc:"The application environment" default:"dev"`
-	Port    string `doc:"The port to listen on" short:"p" default:"8080"`
-	Debug   bool   `doc:"Enable debug mode" short:"d"`
-	Verbose bool   `doc:"Enable verbose logging" short:"v"`
+	Name     string          `doc:"Application name" default:"pitchondb"`
+	Env      string          `doc:"Application environment" default:"dev"`
+	Port     string          `short:"p" doc:"Port to listen on" default:"8080"`
+	Debug    bool            `short:"d" doc:"Enable debug logs" default:"false"`
+	Postgres PostgresOptions `name:"pg" doc:"PostgreSQL database options"`
 }
 
 type PostgresOptions struct {
-	Host     string `doc:"The database host" default:"localhost"`
-	Port     string `doc:"The database port" default:"5432"`
-	User     string `doc:"The database user" default:"pitchondb"`
-	Password string `doc:"The database password" default:"pitchondb"`
-	DB       string `doc:"The database name" default:"pitchondb"`
-	SSLMode  string `doc:"The database SSL mode" default:"disable"`
+	Host     string `doc:"Database host" default:"localhost"`
+	Port     string `doc:"Database port" default:"5432"`
+	User     string `doc:"Database user" default:"pitchondb"`
+	Password string `doc:"Database password" default:"pitchondb"`
+	DB       string `doc:"Database name" default:"pitchondb"`
+	SSLMode  string `doc:"Database SSL mode" default:"disable"`
 }
 
 func (o PostgresOptions) ConnectionString() string {

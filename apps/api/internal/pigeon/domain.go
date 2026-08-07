@@ -16,6 +16,7 @@ var (
 	ErrInvalidAcquisitionMethod = errors.New("invalid acquisition method value")
 )
 
+// Pigeon represents a pigeon entity with its attributes and behaviors.
 type Pigeon struct {
 	id            uuid.UUID
 	name          *string
@@ -29,6 +30,7 @@ type Pigeon struct {
 	updatedAt     time.Time
 }
 
+// New creates a new Pigeon instance with default values for its attributes.
 func New() *Pigeon {
 	return &Pigeon{
 		id:          uuid.New(),
@@ -38,6 +40,7 @@ func New() *Pigeon {
 	}
 }
 
+// Reconstitute creates a new Pigeon instance with the provided attributes, allowing for rehydration from a persisted state.
 func Reconstitute(
 	id uuid.UUID,
 	name *string,
@@ -64,36 +67,10 @@ func Reconstitute(
 	}
 }
 
-func (p *Pigeon) Rename(name string)                 { p.name = &name }
-func (p *Pigeon) AssignRingNumber(ringNumber string) { p.ringNumber = &ringNumber }
+// Rename updates the name of the pigeon.
+func (p *Pigeon) Rename(newName *string) { p.name = newName }
 
-func (p *Pigeon) MarkDeceased() { p.status = StatusDeceased }
-func (p *Pigeon) MarkSold()     { p.status = StatusSold }
-func (p *Pigeon) MarkLost()     { p.status = StatusLost }
-
-func (p *Pigeon) DetermineSex(sex Sex, confidence SexConfidence) {
-	p.sex = sex
-	p.sexConfidence = &confidence
-}
-
-func (p *Pigeon) Acquire(acquiredDate time.Time, acquiredVia AcquisitionMethod) {
-	p.acquiredDate = &acquiredDate
-	p.acquiredVia = acquiredVia
-}
-
-type Snapshot struct {
-	ID            uuid.UUID
-	Name          *string
-	RingNumber    *string
-	Sex           Sex
-	SexConfidence *SexConfidence
-	Status        Status
-	AcquiredDate  *time.Time
-	AcquiredVia   AcquisitionMethod
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-}
-
+// Snapshot returns a snapshot of the current state of the pigeon, which can be used for persistence or serialization.
 func (p *Pigeon) Snapshot() Snapshot {
 	return Snapshot{
 		ID:            p.id,
@@ -109,7 +86,7 @@ func (p *Pigeon) Snapshot() Snapshot {
 	}
 }
 
-//go:generate go tool enumer -type=Sex,SexConfidence,Status,AcquisitionMethod -trimprefix=SexConfidence,Sex,Status,AcquisitionMethod -transform=snake -values -output=domain_enumer.go
+//go:generate go tool enumer -type=Sex,SexConfidence,Status,AcquisitionMethod -trimprefix=SexConfidence,Sex,Status,AcquisitionMethod -transform=snake -values -output=types_enumer.go
 
 // Sex encodes the sex of a pigeon.
 type Sex int
@@ -133,8 +110,10 @@ const (
 	SexConfidencePresumed
 )
 
+// StringPtr returns a pointer to the string representation of the SexConfidence value.
 func (s *SexConfidence) StringPtr() *string { return enums.StringPtr(s) }
 
+// SexConfidenceStringPtr converts a string pointer to a SexConfidence pointer, returning an error if the string is invalid.
 func SexConfidenceStringPtr(s *string) (*SexConfidence, error) {
 	return enums.ParsePtr(s, SexConfidenceString)
 }
@@ -170,3 +149,17 @@ const (
 	// AcquisitionMethodUnknown indicates that the acquisition method of the pigeon is unknown.
 	AcquisitionMethodUnknown
 )
+
+// Snapshot returns a snapshot of the current state of the pigeon, which can be used for persistence or serialization.
+type Snapshot struct {
+	ID            uuid.UUID
+	Name          *string
+	RingNumber    *string
+	Sex           Sex
+	SexConfidence *SexConfidence
+	Status        Status
+	AcquiredDate  *time.Time
+	AcquiredVia   AcquisitionMethod
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
