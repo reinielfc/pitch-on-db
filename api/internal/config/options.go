@@ -9,8 +9,7 @@ type Options struct {
 	Name     string          `doc:"Application name" default:"pitchondb"`
 	Env      string          `doc:"Application environment" default:"dev"`
 	Port     string          `short:"p" doc:"Port to listen on" default:"8080"`
-	Debug    bool            `short:"d" doc:"Enable debug logs" default:"false"`
-	Postgres PostgresOptions `name:"pg" doc:"PostgreSQL database options"`
+	Postgres PostgresOptions `doc:"PostgreSQL database options"`
 }
 
 type PostgresOptions struct {

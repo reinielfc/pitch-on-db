@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -37,8 +38,11 @@ func main() {
 	var deps = &Deps{}
 
 	cli := humacli.New(func(hooks humacli.Hooks, opts *config.Options) {
+		// Determine if the environment is development
+		envIsDev := strings.HasPrefix(opts.Env, "dev")
+
 		// Set up logging and telemetry
-		telemetry.SetupLogging(opts.Debug)
+		telemetry.SetupLogging(envIsDev)
 
 		// Connect to the database
 		postgresDB, err := postgres.Connect(opts.Postgres.ConnectionString())
