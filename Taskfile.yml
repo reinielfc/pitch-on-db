@@ -1,0 +1,125 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+includes:
+  tools: { dir: ./tools, taskfile: ./tools/Taskfile.yml }
+  api:   { dir: ./api,   taskfile: ./api/Taskfile.yml }
+  web:   { dir: ./web,   taskfile: ./web/Taskfile.yml }
+
+vars:
+    NPX: '{{ .NPX | default "npx" }}'
+    BACKENDS: { map: { api: postgres, web: api } }
+
+tasks:
+
+  # Quality Assurance
+
+  format:
+    desc: Format code in the API and web apps
+    cmds:
+      - { task: "api:format" }
+      - { task: "web:format" }
+
+  # Code Generation
+
+  gen:schema:
+    desc: Generate OpenAPI Spec + Schema
+    cmds:
+      - { task: "api:gen:spec" }
+      - { task: "web:gen:schema" }
+
+  # Agents
+
+  agents:skills:sync: 
+    desc: Synchronize dependencies
+    cmd: { task: "npx:skills:install" }
+
+  npx:skills:install:
+    desc: Install required dependencies
+    cmd: { task: "npx:skills:experimental_install" }
+
+  agents:skills:update:
+    desc: Update dependencies
+    cmd: { task: "npx:skills:update" }
+
+  npx:skills:*:
+    internal: true
+    cmd: "{{.NPX}} skills {{index .MATCH 0}} -y"
+
+  # Docker Commands
+
+  docker:up:
+    desc: Start all services in detached mode
+    cmd: { task: "docker::detach" }
+
+  docker:stop:
+    desc: Stop all services
+    cmd: { task: "docker::stop" }
+
+  docker:down:
+    desc: Bring down all services
+    cmd: { task: "docker::down" }
+
+  docker:logs:
+    desc: Follow logs of all services
+    cmd: { task: "docker::flogs" }
+
+  docker:ps:
+    desc: Show status of all services
+    cmd: { task: "docker::ps" }
+
+  docker:*:*:
+    internal: true
+    label: 'docker:{{if .SERVICE}}{{.SERVICE}}:{{end}}{{.COMMAND}}'
+    desc: Run a specific docker command on a specific service
+    vars:
+      SERVICE: '{{index .MATCH 0}}'
+      COMMAND: '{{index .MATCH 1}}'
+      DOCKER_COMPOSE_RAW: { sh: command -v docker-compose }
+      DOCKER_COMPOSE: '{{.DOCKER_COMPOSE_RAW | default "docker compose" }}'
+      COMMAND_SHORTCUTS:
+        map:
+          detach: "up -d"
+          wait: "up -d --wait"
+          flogs: "logs -f"
+          clean: "down -v"
+      CMD: >-
+        {{.DOCKER_COMPOSE}}
+        {{index .COMMAND_SHORTCUTS .COMMAND | default .COMMAND }}
+        {{.SERVICE}}
+    cmd: "{{.CMD | trim}}"
+
+  # Service Commands
+
+  x-backend: &backend
+    internal: true
+    vars:
+      SERVICE: '{{index (splitList ":" .ALIAS) 0 }}'
+      BACKEND: '{{index .BACKENDS .SERVICE }}'
+
+  x-backend-up: &backend-up
+    <<: *backend
+    desc: Wait for the backend to start in detached mode
+    cmd: { task: "docker:{{.BACKEND}}:detach" }
+
+  x-backend-logs: &backend-logs
+    <<: *backend
+    desc: Follow logs of the backend service
+    cmd: { task: "docker:{{.BACKEND}}:flogs" }
+
+  x-backend-reset: &backend-reset
+    <<: *backend
+    desc: Reset the backend service
+    cmds:
+      - { task: "docker:{{.BACKEND}}:clean" }
+      - { task: "docker:{{.BACKEND}}:detach" }
+
+  api:backend:up: { <<: *backend-up, internal: false }
+  web:backend:up: { <<: *backend-up, internal: false }
+
+  api:backend:logs: { <<: *backend-logs, internal: false }
+  web:backend:logs: { <<: *backend-logs, internal: false }
+
+  api:backend:reset: { <<: *backend-reset, internal: false }
+  web:backend:reset: { <<: *backend-reset, internal: false }

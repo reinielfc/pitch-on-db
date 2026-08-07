@@ -1,8 +1,10 @@
+.task/
+
 bin/
 tmp/
 
+!.env.example
 .env
 .env.*
-!.env.example
 
 coverage.out

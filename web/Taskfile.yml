@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+vars:
+  PNPM: '{{ .PNPM | default "pnpm" }}'
+
+tasks:
+  # Development Environment
+
+  sync:
+    desc: Synchronize dependencies
+    cmd: { task: pnpm:install }
+
+  install:
+    desc: Install required dependencies
+    cmds:
+      - { task: install:pnpm }
+      - { task: pnpm:install }
+
+  install:pnpm:
+    internal: true
+    vars: { URL: https://get.pnpm.io/install.sh }
+    cmd: curl -sSfL {{.URL}} | sh -
+
+  update:
+    desc: Update dependencies
+    cmd: { task: pnpm:update }
+
+  # Build / Run
+
+  build:
+    desc: Compile service binary
+    cmd: { task: pnpm:build }
+
+  preview:
+    desc: Preview service build
+    cmd: { task: pnpm:preview }
+
+  dev:
+    desc: Run service with live reload
+    cmd: { task: pnpm:dev }
+
+  # Quality Assurance
+
+  test:
+    desc: Run unit tests
+    cmd: { task: run:test }
+
+  lint:
+    desc: "Run linter"
+    cmd: { task: run:lint }
+
+  format:
+    desc: Format code
+    cmd: { task: run:format }
+
+  check:
+    desc: Check code formatting and linting
+    cmd: { task: run:check }
+
+  # Code Generation
+
+  gen:schema:
+    desc: Generate API schema types
+    cmd: { task: run:gen:schema }
+
+  # Common
+
+  pnpm:*: { internal: true, cmd: "{{.PNPM}} {{index .MATCH 0}}" }
+  run:*: { internal: true, cmd: "{{.PNPM}} run {{index .MATCH 0}}" }

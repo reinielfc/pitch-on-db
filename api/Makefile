@@ -13,7 +13,7 @@ GOLANGCI_LINT_VERSION := v2.11.4
 MOCKERY_CONFIG := ./.mockery.yaml
 OPENAPI_SPEC   := ./openapi.yml
 
-## Environment
+##@ Environment
 
 GOBIN := $(or $(shell $(GO) env GOBIN),$(shell $(GO) env GOPATH)/bin)
 PATH  := $(PATH):$(GOBIN)
@@ -22,8 +22,6 @@ LDFLAGS_VERSION := \
 	-X main.version=$(shell git describe --tags --always --dirty || echo dev) \
 	-X main.gitCommit=$(shell git rev-parse --short HEAD || echo unknown) \
 	-X main.buildTime=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
-
-##@ Tooling
 
 GOLANGCI_LINT_URL := https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
 
@@ -49,7 +47,7 @@ dev: .env.development ## Run service with live reload
 		--build.cmd="$(GO) build $(BUILD_FLAGS) \
 		-o ./tmp/main $(CMD_PATH)"
 
-godoc: ## Run godoc server
+doc: ## Run godoc server
 	$(GO) run golang.org/x/pkgsite/cmd/pkgsite@latest -http=localhost:6060
 
 healthcheck: ## Perform health check on service
@@ -80,15 +78,15 @@ vet: ## Vet code
 
 .PHONY: generate $(addprefix generate-,enums mocks spec)
 
-enums: generate-enums ## Generate code for enums
+enums: generate-enums ## [generate] Code for enums
 generate-enums:
 	$(GO) generate -x -run="go tool enumer" ./...
 
-mocks: generate-mocks ## Generate mocks (requires: mockery)
+mocks: generate-mocks ## [generate] Mocks (requires: mockery)
 generate-mocks:
 	$(GO) tool mockery --config=$(MOCKERY_CONFIG)
 
-spec: generate-spec ## Generate OpenAPI spec
+spec: generate-spec ## [generate] OpenAPI spec
 generate-spec:
 	$(GO) run $(BUILD_FLAGS) $(CMD_PATH) openapi -o $(OPENAPI_SPEC)
 

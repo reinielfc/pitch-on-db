@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+vars:
+  GO: '{{ .GO | default "go" }}'
+
+tasks:
+
+  # Development Environment
+
+  sync:
+    desc: Synchronize dependencies
+    cmd: "{{.GO}} mod tidy"
+
+  install:
+    desc: Install required dependencies
+    cmd: "{{.GO}} mod download"
+
+  update:
+    desc: Update dependencies
+    cmds: 
+      - { cmd: "{{.GO}} get -u ./..." }
+      - { task: "sync" }
+
+  # Code Generation
+
+  gen:sqlc:
+    desc: Generate SQLC code
+    vars: { SQLC_CONFIG: ../db/sqlc.yml }
+    cmd: "{{.GO}} tool sqlc generate -f {{.SQLC_CONFIG}}"
+
+  # Migrations
+
+  migrate:
+    desc: Run all pending migrations
+    cmd: { task: goose:up }
+
+  rollback:
+    desc: Rollback the last migration
+    cmd: { task: goose:down }
+
+  goose:*:
+    internal: true
+    vars:
+      COMMAND: "{{index .MATCH 0}}"
+      MIGRATIONS_DIR: ../db/migrations
+      POSTGRES_CONNECTION:
+        secret: true
+        value: >-
+          host={{     .POSTGRES_HOST     | default "localhost" }}
+          port={{     .POSTGRES_PORT     | default "5432"      }}
+          user={{     .POSTGRES_USER     | default "postgres"  }}
+          password={{ .POSTGRES_PASSWORD | default "password"  }}
+          dbname={{   .POSTGRES_DBNAME   | default "pitchondb" }}
+          sslmode={{  .POSTGRES_SSLMODE  | default "disable"   }}
+    cmd: >-
+      {{.GO}} tool goose -dir '{{.MIGRATIONS_DIR}}'
+      postgres '{{.POSTGRES_CONNECTION}}' {{.COMMAND}}
