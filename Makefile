@@ -98,8 +98,8 @@ generate-sqlc:
 
 schema: generate-schema ## Generate OpenAPI spec and Schema
 generate-schema:
-	$(MAKE) -C apps/api generate-spec
-	$(MAKE) -C apps/web generate-schema
+	$(MAKE) -C api generate-spec
+	$(MAKE) -C web generate-schema
 
 ##@ Postgres
 

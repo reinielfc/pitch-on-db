@@ -3,7 +3,7 @@ name: pitchondb
 services:
   api:
     build:
-      context: apps/api
+      context: api
       dockerfile: Dockerfile
       args:
         APP_VERSION: ${APP_VERSION:-dev}
@@ -27,7 +27,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: web/Dockerfile
       target: runner
     restart: on-failure
     depends_on: [ api ]

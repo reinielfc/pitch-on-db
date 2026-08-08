@@ -1,6 +1,6 @@
 {
     "folders": [
-        { "name": "API",  "path": "apps/api" },
+        { "name": "API",  "path": "api" },
         { "name": "DB",   "path": "db" },
         { "name": "Root", "path": "." }
     ],
@@ -12,7 +12,7 @@
         ]
     },
     "settings": {
-        "files.exclude": { "apps": true,  "db": true },
+        "files.exclude": { "db": true, "web": true },
         "terminal.integrated.cwd": "${workspaceFolder:API}"
     },
     "launch": {

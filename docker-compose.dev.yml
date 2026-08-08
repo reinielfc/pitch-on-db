@@ -14,12 +14,12 @@ services:
     networks: [ default, monitoring ]
     ports: [ "8080:8080" ]
     develop:
-      watch: [{action: rebuild, path: ./apps/api}]
+      watch: [{action: rebuild, path: ./api}]
 
   web:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: web/Dockerfile
       target: dev
     logging:
       driver: loki
@@ -36,13 +36,13 @@ services:
     develop:
       watch:
         - action: sync
-          path: ./apps/web/src
+          path: ./web/src
           target: /app/src
         - action: sync+restart
-          path: ./apps/web/vite.config.ts
+          path: ./web/vite.config.ts
           target: /app/vite.config.ts
         - action: rebuild
-          path: ./apps/web/package.json
+          path: ./web/package.json
 
   postgres:
     logging:
