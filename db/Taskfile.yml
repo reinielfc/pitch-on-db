@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+tasks:
+ 
+  # Code Generation
+
+  gen:sqlc:
+    desc: Generate SQLC code
+    vars: { SQLC_CONFIG: ./sqlc.yml }
+    cmd: "sqlc generate -f {{.SQLC_CONFIG}}"
+
+  # Migrations
+
+  migrate:
+    desc: Run all pending migrations
+    cmd: { task: goose:up }
+
+  rollback:
+    desc: Rollback the last migration
+    cmd: { task: goose:down }
+
+  goose:*:
+    internal: true
+    vars:
+      COMMAND: "{{index .MATCH 0}}"
+      MIGRATIONS_DIR: ./migrations
+      POSTGRES_CONNECTION:
+        secret: true
+        value: >-
+          host={{.POSTGRES_HOST | default "localhost"}}
+          port={{.POSTGRES_PORT | default "5432"}}
+          user={{.POSTGRES_USER | default "postgres"}}
+          password={{.POSTGRES_PASSWORD | default "password"}}
+          dbname={{.POSTGRES_DBNAME | default "pitchondb"}}
+          sslmode={{.POSTGRES_SSLMODE | default "disable"}}
+    cmd: >-
+      goose -dir '{{.MIGRATIONS_DIR}}'
+      postgres '{{.POSTGRES_CONNECTION}}'
+      {{.COMMAND}}

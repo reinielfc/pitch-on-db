@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+vars:
+  BACKEND_OPENAPI_SPEC: "{{.BACKEND_OPENAPI_SPEC}}"
+
+tasks:
+  # Development Environment
+
+  sync:
+    desc: Synchronize dependencies
+    cmd: { task: pnpm:install }
+
+  # Build / Run
+
+  build:
+    desc: Compile service binary
+    sources: &build-sources
+      - package.json
+      - pnpm-lock.yaml
+      - vite.config.js
+      - src/**/*
+      - static/**/*
+    cmd: { task: pnpm:build }
+
+  preview:
+    desc: Preview service build
+    sources: *build-sources
+    cmd: { task: pnpm:preview }
+
+  dev:
+    desc: Run service with live reload
+    cmd: { task: pnpm:dev }
+
+  # Quality Assurance
+
+  test:
+    desc: Run unit tests
+    cmd: { task: run:test }
+
+  lint:
+    desc: "Run linter"
+    cmd: { task: run:lint }
+
+  format:
+    desc: Format code
+    sources: *build-sources
+    cmd: { task: run:format }
+
+  check:
+    desc: Check code formatting and linting
+    cmd: { task: run:check }
+
+  # Code Generation
+
+  gen:schema:
+    desc: Generate API schema types
+    sources: ["{{.BACKEND_OPENAPI_SPEC}}"]
+    cmd: pnpm run gen:schema -- "{{.BACKEND_OPENAPI_SPEC}}"
+
+  # Common
+
+  pnpm:*: { internal: true, cmd: "pnpm {{index .MATCH 0}}" }
+  run:*: { internal: true, cmd: "pnpm run {{index .MATCH 0}}" }
