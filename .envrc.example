@@ -1,0 +1,14 @@
+if ! command -v go &> /dev/null; then
+	echo "warning: go is not installed" >&2
+else
+	export PATH="$(go env GOPATH)/bin:$PATH"
+fi
+
+if ! command -v aqua &> /dev/null; then
+	echo "error: aqua is not installed. Please install aqua first." >&2
+	exit 1
+fi
+
+export PATH="$(aqua root-dir)/bin:$PATH"
+
+aqua install --only-link
