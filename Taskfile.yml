@@ -29,18 +29,18 @@ includes:
   api:
     dir: ./api
     taskfile: ./api/Taskfile.yml
-    vars: { OPENAPI_SPEC: '{{relPath "./api" .API_OPENAPI_SPEC}}' }
+    vars: { OPENAPI_SPEC: '{{relPath "./api" .CONFIG.API.OPENAPI_SPEC}}' }
 
   web:
-    dir: ./web 
+    dir: ./web
     taskfile: ./web/Taskfile.yml
-    vars: { BACKEND_OPENAPI_SPEC: '{{relPath "./web" .API_OPENAPI_SPEC}}' }
+    vars: { BACKEND_OPENAPI_SPEC: '{{relPath "./web" .CONFIG.API.OPENAPI_SPEC}}' }
 
 tasks:
 
   # Agents
 
-  agents:skills:sync: 
+  skills:sync:
     desc: Synchronize dependencies
     cmd: { task: "npx:skills:experimental_install" }
 
@@ -75,20 +75,19 @@ tasks:
     label: 'docker:{{if .SERVICE}}{{.SERVICE}}:{{end}}{{.COMMAND}}'
     desc: Run a specific docker command on a specific service
     vars:
+      DOCKER_COMPOSE: '{{.DOCKER_COMPOSE | default "docker compose"}}'
       SERVICE: '{{index .MATCH 0}}'
       COMMAND: '{{index .MATCH 1}}'
-      DOCKER_COMPOSE: { sh: command -v docker-compose }
       COMMAND_SHORTCUTS:
         map:
           detach: "up -d"
           wait: "up -d --wait"
           flogs: "logs -f"
           clean: "down -v"
-      CMD: >-
-        {{.DOCKER_COMPOSE | default "docker compose"}}
-        {{index .COMMAND_SHORTCUTS .COMMAND | default .COMMAND}}
-        {{.SERVICE}}
-    cmd: "{{.CMD | trim}}"
+    cmd: >-
+      {{- $command := index .COMMAND_SHORTCUTS .COMMAND | default .COMMAND -}}
+      {{- $args := printf "%s %s" $command .SERVICE | trim -}}
+      {{.DOCKER_COMPOSE}} {{$args}}
 
   # Service Commands
 
@@ -129,7 +128,7 @@ tasks:
     desc: Follow backend container logs
     cmd: { task: "docker:{{.BACKEND}}:flogs" }
 
-  api:backend:reset: &backend-reset
+  api:backend:reset:
     vars: *backend-vars
     desc: Reset backend container
     cmds:
@@ -138,3 +137,31 @@ tasks:
 
   web:backend:up: *backend-up
   web:backend:logs: *backend-logs
+
+  # Meta Commands
+
+  completions:
+    desc: Generate shell completions for dev tools
+    requires:
+      vars:
+        - { name: SHELL_TARGET, enum: [bash, zsh] }
+        - { name: COMPLETIONS_DIR }
+    vars:
+      SHELL_TARGET: '{{index .CLI_ARGS_LIST 0}}'
+      COMPLETIONS_DIR: '{{index .CLI_ARGS_LIST 1}}'
+      SHELL_CONFIG_MAP:
+        map:
+          bash: { NAME_FMT: "%s" }
+          zsh: { NAME_FMT: "_%s" }
+      NAME_FMT: '{{(index .SHELL_CONFIG_MAP .SHELL_TARGET).NAME_FMT}}'
+      COMMANDS:
+        map:
+          AQUA: { NAME: aqua, ARGS: "completion {{.SHELL_TARGET}}" }
+          TASK: { NAME: task, ARGS: "--completion {{.SHELL_TARGET}}" }
+    cmd:
+      for: { var: COMMANDS, as: COMMAND  }
+      cmd: >-
+        {{- $name := printf .NAME_FMT .COMMAND.NAME -}}
+        {{- $cmd  := printf "%s %s" .COMMAND.NAME .COMMAND.ARGS -}}
+        {{- $path := joinPath .COMPLETIONS_DIR $name -}}
+        {{$cmd}} > {{$path|q}}
