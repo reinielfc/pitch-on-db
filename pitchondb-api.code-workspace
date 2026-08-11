@@ -1,0 +1,41 @@
+{
+    "folders": [
+        { "name": "API",  "path": "api" },
+        { "name": "DB",   "path": "db" },
+        { "name": "Root", "path": "." }
+    ],
+    "extensions": { "recommendations": [
+        "golang.go",
+        "ms-azuretools.vscode-docker",
+        "cweijan.vscode-postgresql-client2",
+        "task.vscode-task"
+    ]},
+    "settings": {
+        "editor.rulers": [80, 100],
+        "terminal.integrated.cwd": "${workspaceFolder:Root}",
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [{
+            "name": "Debug API",
+            "type": "go", "request": "launch", "mode": "debug",
+            "program": "${workspaceFolder:API}/cmd/service",
+            "cwd": "${workspaceFolder:API}",
+            "envFile": "${workspaceFolder:Root}/.env",
+            "env": { "POSTGRES_HOST": "localhost" },
+            "internalConsoleOptions": "openOnSessionStart",
+            "showLog": true,
+            "preLaunchTask": "backend:up"
+        }]
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [{
+            "label": "backend:up", "detail": "Wait for the backend to start in detached mode",
+            "icon": { "color": "terminal.ansiBlue", "id": "server" },
+            "type": "shell", "command": "make", "args": ["api:backend:up"],
+            "options": { "cwd": "${workspaceFolder:Root}" },
+            "problemMatcher": []
+        }]
+    }
+}

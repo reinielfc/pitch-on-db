@@ -1,0 +1,130 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+vars:
+  GO: '{{.GO | default "go"}}'
+  OPENAPI_SPEC: '{{.OPENAPI_SPEC | default "./openapi.yml"}}'
+
+  BUILD_COMMIT: { sh: "git rev-parse --short HEAD" }
+  BUILD_VERSION: { sh: "git describe --tags --always --dirty" }
+  BUILD_BUILDTIME: '{{now | date "2006-01-02T15:04:05Z07:00"}}'
+  BUILD_LDFLAGS: >-
+    -s -w
+    -X main.version={{.BUILD_VERSION | default "dev"}}
+    -X main.commit={{.BUILD_COMMIT | default "unknown"}}
+    -X main.buildTime={{.BUILD_BUILDTIME}}
+  BUILD_FLAGS: -ldflags '{{.BUILD_LDFLAGS}}'
+
+  CMD_SERVICE: "./cmd/service"
+
+  OUTPUT:
+    map:
+      BUILD: "./bin/service"
+      DEV: "./tmp/main"
+      TEST_COVER: "./coverage.out"
+
+env:
+  SERVICE_POSTGRES_HOST: '{{.POSTGRES_HOST | default "localhost"}}'
+  SERVICE_POSTGRES_PORT: '{{.POSTGRES_PORT | default "5432"}}'
+  SERVICE_POSTGRES_USER: '{{.POSTGRES_USER | default "pitchondb"}}'
+  SERVICE_POSTGRES_PASSWORD: '{{.POSTGRES_PASSWORD | default "pitchondb"}}'
+  SERVICE_POSTGRES_DB: '{{.POSTGRES_DB | default "pitchondb"}}'
+  SERVICE_POSTGRES_SSLMODE: '{{.POSTGRES_SSLMODE  | default "disable"}}'
+
+tasks:
+
+  # Development Environment
+
+  sync:
+    desc: Synchronize dependencies
+    cmd: "{{.GO}} mod tidy"
+
+  # Build / Run
+
+  build:
+    desc: Compile service binary
+    sources: ["**/*.go", go.mod, { exclude: "**/*_test.go" }]
+    generates: ["{{.OUTPUT.BUILD}}"]
+    cmd: "{{.GO}} build {{.BUILD_FLAGS}} -o {{.OUTPUT.BUILD}} {{.CMD_SERVICE}}"
+
+  run:
+    desc: Run service locally
+    cmd: "{{.GO}} run {{.BUILD_FLAGS}} {{.CMD_SERVICE}}"
+
+  dev:
+    desc: Run service with live reload
+    vars:
+      CONFIG: ".air.toml"
+      BUILD_CMD: "{{.GO}} build {{.BUILD_FLAGS}} -o {{.OUTPUT.DEV}} {{.CMD_SERVICE}}"
+    cmd: '{{.GO}} tool air -c {{.CONFIG}} --build.cmd="{{.BUILD_CMD}}"'
+    generates: ["{{.OUTPUT.DEV}}"]
+
+  doc:
+    desc: Run godoc server
+    vars:
+      PACKAGE: "golang.org/x/pkgsite/cmd/pkgsite@latest"
+      HOST: '{{.HOST | default "localhost"}}'
+      PORT: 6060
+    cmd: "{{.GO}} run {{.PACKAGE}} -http={{.HOST}}:{{.PORT}}"
+
+  healthcheck:
+    desc: Perform health check on service
+    vars: { RETRIES: 3, INTERVAL: 3s }
+    cmd: >-
+      {{.GO}} run {{.BUILD_FLAGS}} {{.CMD_SERVICE}}
+      healthcheck -r {{.RETRIES}} -i {{.INTERVAL}}
+
+  # Quality Assurance
+
+  test:
+    desc: Run unit tests
+    cmd: "{{.GO}} test -v -race -count=1 ./..."
+
+  test-cover:
+    desc: Run unit tests with coverage report
+    cmds:
+      - "{{.GO}} test -v -race -coverprofile={{.OUTPUT.TEST_COVER}} ./..."
+      - "{{.GO}} tool cover -func={{.OUTPUT.TEST_COVER}}"
+    generates: ["{{.OUTPUT.TEST_COVER}}"]
+
+  lint:
+    desc: Run linter
+    cmd: "golangci-lint run ./..."
+
+  format:
+    desc: Format code
+    sources: ["**/*.go"]
+    cmds:
+      - "{{.GO}} fmt ./..."
+      - "{{.GO}} tool goimports -w ."
+
+  vet:
+    desc: Vet code
+    cmd: "{{.GO}} vet ./..."
+
+  # Code Generation
+
+  gen:
+    desc: Generate code
+    sources: ["**/*.go"]
+    generates: ["**/*_enumer.go"]
+    cmd: { task: "gen:tool:enumer" }
+
+  gen:mocks:
+    desc: Generate Mocks
+    vars: { CONFIG: "./.mockery.yml" }
+    sources: ["**/*.go", "{{.CONFIG}}"]
+    cmd: "{{.GO}} tool mockery --config={{.CONFIG}}"
+
+  gen:spec:
+    desc: OpenAPI spec
+    sources: ["**/*.go"]
+    generates: ["{{.OPENAPI_SPEC}}"]
+    cmd: "{{.GO}} run {{.BUILD_FLAGS}} {{.CMD_SERVICE}} openapi -o {{.OPENAPI_SPEC}}"
+
+  gen:tool:*:
+    internal: true
+    desc: Generate code for the specified tool
+    vars: { TOOL: "{{index .MATCH 0}}" }
+    cmd: '{{.GO}} generate -x -run="go tool {{.TOOL}}" ./...'

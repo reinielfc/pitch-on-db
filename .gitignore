@@ -1,2 +1,7 @@
+.agents/skills/
+.direnv/
+.task/
+.worktrees/
+
 .env
-.agents/skills
+.envrc

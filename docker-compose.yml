@@ -3,24 +3,27 @@ name: pitchondb
 services:
   api:
     build:
-      context: api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api/Dockerfile
+      target: runner
       args:
-        APP_VERSION: ${APP_VERSION:-dev}
+        VERSION:    ${VERSION:-dev}
+        COMMIT:     ${COMMIT:-unknown}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
     restart: on-failure
     depends_on: [ postgres ]
     environment:
-      SERVICE_APP_ENV: ${APP_ENV:-production}
-      SERVICE_APP_DEBUG: ${APP_DEBUG:-false}
-      SERVICE_POSTGRES_HOST: postgres
-      SERVICE_POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-      SERVICE_POSTGRES_USER: ${POSTGRES_USER:-pitchondb}
+      SERVICE_APP_ENV:           prod
+      SERVICE_APP_PORT:          8080
+      SERVICE_POSTGRES_HOST:     postgres
+      SERVICE_POSTGRES_PORT:     ${POSTGRES_PORT:-5432}
+      SERVICE_POSTGRES_USER:     ${POSTGRES_USER:-pitchondb}
       SERVICE_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pitchondb}
-      SERVICE_POSTGRES_DB: ${POSTGRES_DB:-pitchondb}
-      SERVICE_POSTGRES_SSLMODE: ${POSTGRES_SSLMODE:-disable}
+      SERVICE_POSTGRES_DB:       ${POSTGRES_DB:-pitchondb}
+      SERVICE_POSTGRES_SSLMODE:  ${POSTGRES_SSLMODE:-disable}
     expose: [ 8080 ]
     healthcheck:
-      test: ["CMD-SHELL", "/bin/pitchondb healthcheck"]
+      test: ["CMD-SHELL", "/bin/api healthcheck -retries 1"]
       interval: 5s
       retries: 5
 
@@ -36,9 +39,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-pitchondb}
+      POSTGRES_USER:     ${POSTGRES_USER:-pitchondb}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pitchondb}
-      POSTGRES_DB: ${POSTGRES_DB:-pitchondb}
+      POSTGRES_DB:       ${POSTGRES_DB:-pitchondb}
     ports: [ "${POSTGRES_PORT:-5432}:5432" ]
     volumes: [ postgres-data:/var/lib/postgresql/data ]
     healthcheck:

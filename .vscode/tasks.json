@@ -2,21 +2,15 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "docker-stop", "detail": "Stop all running services",
+            "label": "docker:stop", "detail": "Stop all services",
             "icon": { "color": "terminal.ansiRed", "id": "stop" },
-            "type": "shell", "command": "make", "args": ["docker-stop"],
+            "type": "shell", "command": "task", "args": ["docker:stop"],
             "problemMatcher": []
         },
         {
-            "label": "start-grafana", "detail": "Start Grafana service",
-            "icon": { "color": "terminal.ansiBlue", "id": "graph" },
-            "type": "shell", "command": "make", "args": [ "start-grafana" ],
-            "problemMatcher": []
-        },
-        {
-            "label": "migrate", "detail": "Run database migrations",
+            "label": "db:migrate", "detail": "Run all pending migrations",
             "icon": { "color": "terminal.ansiYellow", "id": "arrow-circle-up" },
-            "type": "shell", "command": "make", "args": [ "migrate" ],
+            "type": "shell", "command": "task", "args": [ "db:migrate" ],
             "problemMatcher": []
         },
     ],
