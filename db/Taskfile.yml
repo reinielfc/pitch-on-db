@@ -33,7 +33,7 @@ tasks:
           port={{.POSTGRES_PORT | default "5432"}}
           user={{.POSTGRES_USER | default "postgres"}}
           password={{.POSTGRES_PASSWORD | default "password"}}
-          dbname={{.POSTGRES_DBNAME | default "pitchondb"}}
+          dbname={{.POSTGRES_DB | default "pitchondb"}}
           sslmode={{.POSTGRES_SSLMODE | default "disable"}}
     cmd: >-
       goose -dir '{{.MIGRATIONS_DIR}}'

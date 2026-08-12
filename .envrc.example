@@ -1,14 +1,14 @@
-if ! command -v go &> /dev/null; then
-	echo "warning: go is not installed" >&2
+dotenv .env
+
+if has go; then
+	PATH_add "$(go env GOPATH)/bin"
 else
-	export PATH="$(go env GOPATH)/bin:$PATH"
+	log_status "warning: go is not installed"
 fi
 
-if ! command -v aqua &> /dev/null; then
-	echo "error: aqua is not installed. Please install aqua first." >&2
-	exit 1
+if has aqua; then
+	PATH_add "$(aqua root-dir)/bin"
+	aqua install --only-link
+else
+	log_status "warning: aqua is not installed"
 fi
-
-export PATH="$(aqua root-dir)/bin:$PATH"
-
-aqua install --only-link

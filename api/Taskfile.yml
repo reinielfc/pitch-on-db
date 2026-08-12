@@ -40,6 +40,13 @@ tasks:
     desc: Synchronize dependencies
     cmd: "{{.GO}} mod tidy"
 
+  init:dotenv:development:
+    internal: true
+    vars: { ENV_FILE: ".env.development" }
+    sources: ["./{{.ENV_FILE}}.example"]
+    generates: ["./{{.ENV_FILE}}"]
+    cmd: cp ./{{.ENV_FILE}}.example ./{{.ENV_FILE}}
+
   # Build / Run
 
   build:
@@ -54,6 +61,7 @@ tasks:
 
   dev:
     desc: Run service with live reload
+    deps: [task: init:dotenv:development]
     vars:
       CONFIG: ".air.toml"
       BUILD_CMD: "{{.GO}} build {{.BUILD_FLAGS}} -o {{.OUTPUT.DEV}} {{.CMD_SERVICE}}"

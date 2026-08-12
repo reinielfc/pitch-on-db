@@ -8,6 +8,10 @@ vars:
   AQUA: '{{.AQUA | default "aqua"}}'
   AQUA_ROOT: { sh: "{{.AQUA}} root-dir" }
 
+  COMMIT: { sh: "git rev-parse --short HEAD" }
+  VERSION: { sh: "git describe --tags --always --dirty" }
+  TIMESTAMP: '{{now | date "2006-01-02T15:04:05Z07:00"}}'
+
   CONFIG:
     map:
       WEB: { DOCKER_SERVICE: web, DOCKER_BACKEND: api }
@@ -21,7 +25,6 @@ env:
   PATH: '{{.AQUA_ROOT}}/bin:{{.PATH}}'
 
 includes:
-
   db:
     dir: ./db
     taskfile: ./db/Taskfile.yml
@@ -75,12 +78,13 @@ tasks:
     label: 'docker:{{if .SERVICE}}{{.SERVICE}}:{{end}}{{.COMMAND}}'
     desc: Run a specific docker command on a specific service
     vars:
-      DOCKER_COMPOSE: '{{.DOCKER_COMPOSE | default "docker compose"}}'
       SERVICE: '{{index .MATCH 0}}'
       COMMAND: '{{index .MATCH 1}}'
+      DOCKER_COMPOSE: '{{.DOCKER_COMPOSE | default "docker compose"}}'
       COMMAND_SHORTCUTS:
         map:
           detach: "up -d"
+          rebuild: "build"
           wait: "up -d --wait"
           flogs: "logs -f"
           clean: "down -v"
@@ -91,30 +95,39 @@ tasks:
 
   # Service Commands
 
-  db:service:up: &service-up
+  db:up: &service-up
     desc: Start service in container
     vars: &service-vars
       NAMESPACE: '{{index (splitList ":" .TASK) 0 | upper}}'
       SERVICE: '{{(index .CONFIG .NAMESPACE).DOCKER_SERVICE}}'
     cmd: { task: "docker:{{.SERVICE}}:detach" }
 
-  db:service:logs: &service-logs
+  db:logs: &service-logs
     vars: *service-vars
     desc: Follow service container logs
     cmd: { task: "docker:{{.SERVICE}}:flogs" }
 
-  db:service:reset:
+  db:reset:
     vars: *service-vars
     desc: Reset service container
     cmds:
       - { task: "docker:{{.SERVICE}}:clean" }
       - { task: "docker:{{.SERVICE}}:detach" }
 
-  api:service:up: *service-up
-  api:service:logs: *service-logs
+  api:service:build:
+    vars: *service-vars
+    env: &service-build-env
+      API_VERSION: '{{.VERSION}}'
+      API_COMMIT: '{{.COMMIT}}'
+      API_BUILDTIME: '{{.TIMESTAMP}}'
+    desc: Rebuild service container
+    cmd: { task: "docker:{{.SERVICE}}:build" }
 
-  web:service:up: *service-up
-  web:service:logs: *service-logs
+  api:up: *service-up
+  api:logs: *service-logs
+
+  web:up: *service-up
+  web:logs: *service-logs
 
   api:backend:up: &backend-up
     vars: &backend-vars
@@ -134,6 +147,12 @@ tasks:
     cmds:
       - { task: "docker:{{.BACKEND}}:clean" }
       - { task: "docker:{{.BACKEND}}:detach" }
+
+  web:backend:build:
+    vars: *backend-vars
+    env: *service-build-env
+    desc: Rebuild backend container
+    cmd: { task: "docker:{{.BACKEND}}:build" }
 
   web:backend:up: *backend-up
   web:backend:logs: *backend-logs

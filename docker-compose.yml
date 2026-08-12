@@ -7,9 +7,9 @@ services:
       dockerfile: api/Dockerfile
       target: runner
       args:
-        VERSION:    ${VERSION:-dev}
-        COMMIT:     ${COMMIT:-unknown}
-        BUILD_TIME: ${BUILD_TIME:-unknown}
+        VERSION:    ${API_VERSION:-dev}
+        COMMIT:     ${API_COMMIT:-unknown}
+        BUILD_TIME: ${API_BUILD_TIME:-unknown}
     restart: on-failure
     depends_on: [ postgres ]
     environment:

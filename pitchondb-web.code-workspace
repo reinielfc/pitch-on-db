@@ -15,7 +15,6 @@
         "editor.rulers": [80, 100],
         "files.exclude": {
             ".svelte-kit": true,
-            "database": true,
             "node_modules": true,
             "src": true,
         },
