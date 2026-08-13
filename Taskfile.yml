@@ -1,31 +1,31 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
 
-version: '3'
+version: "3"
 
 dotenv: [.env]
 
 vars:
-  # Git and build information
-  VERSION: { sh: "git describe --tags --always --dirty" }
-  COMMIT: { sh: "git rev-parse --short HEAD" }
-  COMMIT_TIMESTAMP: { sh: "git log -1 --format=%cI" }
   TIMESTAMP: '{{now | date "2006-01-02T15:04:05Z07:00"}}'
 
-  # Aqua CLI information
+  GIT_VERSION: { sh: "git describe --tags --always --dirty" }
+  GIT_COMMIT: { sh: "git rev-parse --short HEAD" }
+
   AQUA: '{{.AQUA | default "aqua"}}'
   AQUA_ROOT: { sh: "{{.AQUA}} root-dir" }
 
-  CONFIG:
+  DOCKER: '{{.DOCKER | default "docker"}}'
+  DOCKER_COMPOSE: '{{.DOCKER_COMPOSE | default (printf "%s compose" .DOCKER)}}'
+
+  API:
     map:
-      WEB: { DOCKER_SERVICE: web, DOCKER_BACKEND: api }
-      API:
-        DOCKER_SERVICE: api
-        DOCKER_BACKEND: postgres
-        OPENAPI_SPEC: '{{.API_OPENAPI_SPEC | default "./api/openapi.yml"}}'
-      DB: { DOCKER_SERVICE: postgres }
+      BUILD:
+        VERSION: '{{.GIT_VERSION | default "dev"}}'
+        COMMIT: '{{.GIT_COMMIT | default "unknown"}}'
+        TIMESTAMP: '{{.TIMESTAMP | default "unknown"}}'
+      OPENAPI_SPEC: '{{.API_OPENAPI_SPEC | default "./api/openapi.yml"}}'
 
 env:
-  PATH: '{{.AQUA_ROOT}}/bin:{{.PATH}}'
+  PATH: "{{.AQUA_ROOT}}/bin:{{.PATH}}"
 
 includes:
   db:
@@ -36,56 +36,59 @@ includes:
     dir: ./api
     taskfile: ./api/Taskfile.yml
     vars:
-      OPENAPI_SPEC: '{{relPath "./api" .CONFIG.API.OPENAPI_SPEC}}'
+      OPENAPI_SPEC: '{{relPath "./api" .API.OPENAPI_SPEC}}'
 
   web:
     dir: ./web
     taskfile: ./web/Taskfile.yml
     vars:
-      BACKEND_OPENAPI_SPEC: '{{relPath "./web" .CONFIG.API.OPENAPI_SPEC}}'
+      BACKEND_OPENAPI_SPEC: '{{relPath "./web" .API.OPENAPI_SPEC}}'
 
 tasks:
-
   # Agents
 
   skills:sync:
     desc: Synchronize dependencies
-    cmd: { task: "npx:skills:experimental_install" }
+    cmd: npx skills experimental_install -y
 
-  npx:skills:*:
+  # Containers
+
+  run:docker:*:*:
     internal: true
-    cmd: "npx skills {{index .MATCH 0}} -y"
-
-  # Docker Commands
-
-  docker:up:
-    desc: Start all services in detached mode
-    cmd: { task: "docker::detach" }
+    vars:
+      COMMAND: "{{index .MATCH 0}}"
+      SERVICE: "{{index .MATCH 1}}"
+      SHORTCUTS:
+        map:
+          detach: "up -d"
+          rebuild: "build"
+          wait: "up -d --wait"
+          flogs: "logs -f"
+          clean: "down -v"
 
   docker:stop:
     desc: Stop all services
-    cmd: { task: "docker::stop" }
+    cmd: { task: "run:docker:stop:" }
 
   docker:down:
     desc: Bring down all services
-    cmd: { task: "docker::down" }
+    cmd: { task: "run:docker:down:" }
 
   docker:logs:
     desc: Follow logs of all services
-    cmd: { task: "docker::flogs" }
+    cmd: { task: "run:docker:flogs" }
 
   docker:ps:
     desc: Show status of all services
-    cmd: { task: "docker::ps" }
+    cmd: { task: "run:docker:ps" }
 
   docker:*:*:
     internal: true
-    label: 'docker:{{if .SERVICE}}{{.SERVICE}}:{{end}}{{.COMMAND}}'
+    label: "docker:{{if .SERVICE}}{{.SERVICE}}:{{end}}{{.COMMAND}}"
     desc: Run a specific docker command on a specific service
     vars:
-      SERVICE: '{{index .MATCH 0}}'
-      COMMAND: '{{index .MATCH 1}}'
-      DOCKER_COMPOSE: '{{.DOCKER_COMPOSE | default "docker compose"}}'
+      SERVICE: "{{index .MATCH 0}}"
+      COMMAND: "{{index .MATCH 1}}"
       COMMAND_SHORTCUTS:
         map:
           detach: "up -d"
@@ -104,7 +107,7 @@ tasks:
     desc: Start service in container
     vars: &service-vars
       NAMESPACE: '{{index (splitList ":" .TASK) 0 | upper}}'
-      SERVICE: '{{(index .CONFIG .NAMESPACE).DOCKER_SERVICE}}'
+      SERVICE: "{{(index .CONFIG .NAMESPACE).DOCKER_SERVICE}}"
     cmd: { task: "docker:{{.SERVICE}}:detach" }
 
   db:logs: &service-logs
@@ -122,9 +125,9 @@ tasks:
   api:service:build:
     vars: *service-vars
     env:
-      API_VERSION: '{{.VERSION}}'
-      API_COMMIT: '{{.COMMIT}}'
-      API_BUILDTIME: '{{.TIMESTAMP}}'
+      API_VERSION: "{{.VERSION}}"
+      API_COMMIT: "{{.COMMIT}}"
+      API_BUILDTIME: "{{.TIMESTAMP}}"
     desc: Rebuild service container
     cmd: { task: "docker:{{.SERVICE}}:build" }
 
@@ -143,21 +146,17 @@ tasks:
         - { name: SHELL_TARGET, enum: [bash, zsh] }
         - { name: COMPLETIONS_DIR }
     vars:
-      SHELL_TARGET: '{{index .CLI_ARGS_LIST 0}}'
-      COMPLETIONS_DIR: '{{index .CLI_ARGS_LIST 1}}'
-      SHELL_CONFIG_MAP:
-        map:
-          bash: { NAME_FMT: "%s" }
-          zsh: { NAME_FMT: "_%s" }
-      NAME_FMT: '{{(index .SHELL_CONFIG_MAP .SHELL_TARGET).NAME_FMT}}'
+      SHELL_TARGET:    "{{index .CLI_ARGS_LIST 0}}"
+      COMPLETIONS_DIR: "{{index .CLI_ARGS_LIST 1}}"
+      FILENAME_FMT: '{{if (eq .SHELL_TARGET "zsh") "_%s" "%s"}}'
       COMMANDS:
         map:
           AQUA: { NAME: aqua, ARGS: "completion {{.SHELL_TARGET}}" }
           TASK: { NAME: task, ARGS: "--completion {{.SHELL_TARGET}}" }
     cmd:
-      for: { var: COMMANDS, as: COMMAND  }
+      for: { var: COMMANDS, as: COMMAND }
       cmd: >-
-        {{- $name := printf .NAME_FMT .COMMAND.NAME -}}
+        {{- $name := printf .FILENAME_FMT .COMMAND.NAME -}}
         {{- $cmd  := printf "%s %s" .COMMAND.NAME .COMMAND.ARGS -}}
         {{- $path := joinPath .COMPLETIONS_DIR $name -}}
         {{$cmd}} > {{$path|q}}
