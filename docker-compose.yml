@@ -21,6 +21,7 @@ services:
       SERVICE_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pitchondb}
       SERVICE_POSTGRES_DB:       ${POSTGRES_DB:-pitchondb}
       SERVICE_POSTGRES_SSLMODE:  ${POSTGRES_SSLMODE:-disable}
+    ports: [ 8080:8080 ]
     expose: [ 8080 ]
     healthcheck:
       test: ["CMD-SHELL", "/bin/api healthcheck -retries 1"]

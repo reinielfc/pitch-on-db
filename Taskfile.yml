@@ -5,12 +5,15 @@ version: '3'
 dotenv: [.env]
 
 vars:
+  # Git and build information
+  VERSION: { sh: "git describe --tags --always --dirty" }
+  COMMIT: { sh: "git rev-parse --short HEAD" }
+  COMMIT_TIMESTAMP: { sh: "git log -1 --format=%cI" }
+  TIMESTAMP: '{{now | date "2006-01-02T15:04:05Z07:00"}}'
+
+  # Aqua CLI information
   AQUA: '{{.AQUA | default "aqua"}}'
   AQUA_ROOT: { sh: "{{.AQUA}} root-dir" }
-
-  COMMIT: { sh: "git rev-parse --short HEAD" }
-  VERSION: { sh: "git describe --tags --always --dirty" }
-  TIMESTAMP: '{{now | date "2006-01-02T15:04:05Z07:00"}}'
 
   CONFIG:
     map:
@@ -32,12 +35,14 @@ includes:
   api:
     dir: ./api
     taskfile: ./api/Taskfile.yml
-    vars: { OPENAPI_SPEC: '{{relPath "./api" .CONFIG.API.OPENAPI_SPEC}}' }
+    vars:
+      OPENAPI_SPEC: '{{relPath "./api" .CONFIG.API.OPENAPI_SPEC}}'
 
   web:
     dir: ./web
     taskfile: ./web/Taskfile.yml
-    vars: { BACKEND_OPENAPI_SPEC: '{{relPath "./web" .CONFIG.API.OPENAPI_SPEC}}' }
+    vars:
+      BACKEND_OPENAPI_SPEC: '{{relPath "./web" .CONFIG.API.OPENAPI_SPEC}}'
 
 tasks:
 
@@ -116,7 +121,7 @@ tasks:
 
   api:service:build:
     vars: *service-vars
-    env: &service-build-env
+    env:
       API_VERSION: '{{.VERSION}}'
       API_COMMIT: '{{.COMMIT}}'
       API_BUILDTIME: '{{.TIMESTAMP}}'
@@ -128,34 +133,6 @@ tasks:
 
   web:up: *service-up
   web:logs: *service-logs
-
-  api:backend:up: &backend-up
-    vars: &backend-vars
-      NAMESPACE: '{{index (splitList ":" .TASK) 0 | upper}}'
-      BACKEND: '{{(index .CONFIG .NAMESPACE).DOCKER_BACKEND}}'
-    desc: Wait for backend container to start
-    cmd: { task: "docker:{{.BACKEND}}:detach" }
-
-  api:backend:logs: &backend-logs
-    vars: *backend-vars
-    desc: Follow backend container logs
-    cmd: { task: "docker:{{.BACKEND}}:flogs" }
-
-  api:backend:reset:
-    vars: *backend-vars
-    desc: Reset backend container
-    cmds:
-      - { task: "docker:{{.BACKEND}}:clean" }
-      - { task: "docker:{{.BACKEND}}:detach" }
-
-  web:backend:build:
-    vars: *backend-vars
-    env: *service-build-env
-    desc: Rebuild backend container
-    cmd: { task: "docker:{{.BACKEND}}:build" }
-
-  web:backend:up: *backend-up
-  web:backend:logs: *backend-logs
 
   # Meta Commands
 
