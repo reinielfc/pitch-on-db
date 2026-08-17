@@ -1,9 +1,8 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
 
-version: '3'
+version: "3"
 
 tasks:
- 
   # Code Generation
 
   gen:sqlc:
@@ -26,7 +25,7 @@ tasks:
     vars:
       COMMAND: "{{index .MATCH 0}}"
       MIGRATIONS_DIR: ./migrations
-      POSTGRES_CONNECTION:
+      CONNECTION_STRING:
         secret: true
         value: >-
           host={{.POSTGRES_HOST | default "localhost"}}
@@ -36,6 +35,6 @@ tasks:
           dbname={{.POSTGRES_DB | default "pitchondb"}}
           sslmode={{.POSTGRES_SSLMODE | default "disable"}}
     cmd: >-
-      goose -dir '{{.MIGRATIONS_DIR}}'
-      postgres '{{.POSTGRES_CONNECTION}}'
+      goose -dir '{{.MIGRATIONS_DIR|q}}'
+      postgres '{{.CONNECTION_STRING|q}}'
       {{.COMMAND}}

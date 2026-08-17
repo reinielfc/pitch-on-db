@@ -31,7 +31,7 @@ type Deps struct{ api huma.API }
 func main() {
 	startupTime := time.Now()
 
-	var deps = &Deps{}
+	deps := &Deps{}
 
 	cli := humacli.New(func(hooks humacli.Hooks, opts *config.Options) {
 		// Determine if the environment is development

@@ -58,8 +58,8 @@ tasks:
     desc: Generate API schema types
     sources: ["{{.BACKEND_OPENAPI_SPEC}}"]
     cmds:
-      - pnpm run gen:schema:openapi -- {{.BACKEND_OPENAPI_SPEC|q}}
-      - pnpm run gen:schema:format
+      - "pnpm run gen:schema:openapi -- {{.BACKEND_OPENAPI_SPEC|q}}"
+      - "pnpm run gen:schema:format"
 
   # Common
 

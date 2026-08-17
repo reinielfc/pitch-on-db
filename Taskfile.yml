@@ -14,15 +14,11 @@ vars:
   AQUA_ROOT: { sh: "{{.AQUA}} root-dir" }
 
   DOCKER: '{{.DOCKER | default "docker"}}'
-  DOCKER_COMPOSE: '{{.DOCKER_COMPOSE | default (printf "%s compose" .DOCKER)}}'
+  DOCKER_COMPOSE: >-
+    {{- $composeCmd := printf "%s compose" .DOCKER -}}
+    {{.DOCKER_COMPOSE | default $composeCmd}}
 
-  API:
-    map:
-      BUILD:
-        VERSION: '{{.GIT_VERSION | default "dev"}}'
-        COMMIT: '{{.GIT_COMMIT | default "unknown"}}'
-        TIMESTAMP: '{{.TIMESTAMP | default "unknown"}}'
-      OPENAPI_SPEC: '{{.API_OPENAPI_SPEC | default "./api/openapi.yml"}}'
+  API_OPENAPI_SPEC: '{{.API_OPENAPI_SPEC | default "./api/openapi.yml"}}'
 
 env:
   PATH: "{{.AQUA_ROOT}}/bin:{{.PATH}}"
@@ -36,106 +32,100 @@ includes:
     dir: ./api
     taskfile: ./api/Taskfile.yml
     vars:
-      OPENAPI_SPEC: '{{relPath "./api" .API.OPENAPI_SPEC}}'
+      BUILD_VERSION: "{{.GIT_VERSION}}"
+      BUILD_COMMIT: "{{.GIT_COMMIT}}"
+      BUILD_TIMESTAMP: "{{.TIMESTAMP}}"
+      OPENAPI_SPEC: '{{relPath "./api" .API_OPENAPI_SPEC}}'
 
   web:
     dir: ./web
     taskfile: ./web/Taskfile.yml
     vars:
-      BACKEND_OPENAPI_SPEC: '{{relPath "./web" .API.OPENAPI_SPEC}}'
+      BACKEND_OPENAPI_SPEC: '{{relPath "./web" .API_OPENAPI_SPEC}}'
 
 tasks:
   # Agents
 
   skills:sync:
     desc: Synchronize dependencies
-    cmd: npx skills experimental_install -y
+    cmd: "npx skills experimental_install -y"
 
-  # Containers
+  # Docker
 
   run:docker:*:*:
     internal: true
     vars:
-      COMMAND: "{{index .MATCH 0}}"
-      SERVICE: "{{index .MATCH 1}}"
-      SHORTCUTS:
-        map:
-          detach: "up -d"
-          rebuild: "build"
-          wait: "up -d --wait"
-          flogs: "logs -f"
-          clean: "down -v"
-
-  docker:stop:
-    desc: Stop all services
-    cmd: { task: "run:docker:stop:" }
-
-  docker:down:
-    desc: Bring down all services
-    cmd: { task: "run:docker:down:" }
-
-  docker:logs:
-    desc: Follow logs of all services
-    cmd: { task: "run:docker:flogs" }
-
-  docker:ps:
-    desc: Show status of all services
-    cmd: { task: "run:docker:ps" }
-
-  docker:*:*:
-    internal: true
-    label: "docker:{{if .SERVICE}}{{.SERVICE}}:{{end}}{{.COMMAND}}"
-    desc: Run a specific docker command on a specific service
-    vars:
       SERVICE: "{{index .MATCH 0}}"
       COMMAND: "{{index .MATCH 1}}"
-      COMMAND_SHORTCUTS:
+      SHORTCUTS:
         map:
-          detach: "up -d"
-          rebuild: "build"
-          wait: "up -d --wait"
-          flogs: "logs -f"
-          clean: "down -v"
-    cmd: >-
-      {{- $command := index .COMMAND_SHORTCUTS .COMMAND | default .COMMAND -}}
-      {{- $args := printf "%s %s" $command .SERVICE | trim -}}
-      {{.DOCKER_COMPOSE}} {{$args}}
+          detach: up -d
+          wait: up -d --wait
+          flogs: logs -f
+          clean: down -v
+    cmd: "{{.DOCKER_COMPOSE}} {{.ARGS|trim}}"
 
-  # Service Commands
+  # Docker Commands
 
-  db:up: &service-up
+  docker:stop:
+    desc: Stop service(s)
+    cmd: { task: run:docker::stop }
+
+  docker:down:
+    desc: Bring down service(s)
+    cmd: { task: run:docker::down }
+
+  docker:ps:
+    desc: Show status of service(s)
+    cmd: { task: run:docker::ps }
+
+  docker:logs:
+    desc: Follow logs of service(s)
+    cmd: { task: run:docker::flogs }
+
+  # DB / Postgres Service
+
+  service:db:up:
     desc: Start service in container
-    vars: &service-vars
-      NAMESPACE: '{{index (splitList ":" .TASK) 0 | upper}}'
-      SERVICE: "{{(index .CONFIG .NAMESPACE).DOCKER_SERVICE}}"
-    cmd: { task: "docker:{{.SERVICE}}:detach" }
+    cmd: { task: run:docker:postgres:up }
 
-  db:logs: &service-logs
-    vars: *service-vars
+  service:db:logs:
     desc: Follow service container logs
-    cmd: { task: "docker:{{.SERVICE}}:flogs" }
+    cmd: { task: run:docker:postgres:flogs }
 
-  db:reset:
-    vars: *service-vars
-    desc: Reset service container
+  service:db:reset:
+    desc: Reset container & volumes
     cmds:
-      - { task: "docker:{{.SERVICE}}:clean" }
-      - { task: "docker:{{.SERVICE}}:detach" }
+      - task: run:docker:postgres:clean
+      - task: run:docker:postgres:detach
 
-  api:service:build:
-    vars: *service-vars
-    env:
-      API_VERSION: "{{.VERSION}}"
-      API_COMMIT: "{{.COMMIT}}"
-      API_BUILDTIME: "{{.TIMESTAMP}}"
-    desc: Rebuild service container
-    cmd: { task: "docker:{{.SERVICE}}:build" }
+  # API Service
 
-  api:up: *service-up
-  api:logs: *service-logs
+  service:api:build:
+    desc: Build service container
+    vars:
+      API_BUILD_VERSION: "{{.GIT_VERSION}}"
+      API_BUILD_COMMIT: "{{.GIT_COMMIT}}"
+      API_BUILD_BUILD_DATE: "{{.TIMESTAMP}}"
+    cmd: { task: run:docker:api:build }
 
-  web:up: *service-up
-  web:logs: *service-logs
+  service:api:up:
+    desc: Start service in container
+    cmd: { task: run:docker:api:detach }
+
+  service:api:logs:
+    desc: Follow service container logs
+    cmd: { task: run:docker:api:flogs }
+
+  # Web Service
+
+  service:web:up:
+    desc: Start service in container
+    cmd: { task: run:docker:web:detach }
+
+  service:web:logs:
+    desc: Follow service container logs
+    cmd: { task: run:docker:web:flogs }
 
   # Meta Commands
 
@@ -146,7 +136,7 @@ tasks:
         - { name: SHELL_TARGET, enum: [bash, zsh] }
         - { name: COMPLETIONS_DIR }
     vars:
-      SHELL_TARGET:    "{{index .CLI_ARGS_LIST 0}}"
+      SHELL_TARGET: "{{index .CLI_ARGS_LIST 0}}"
       COMPLETIONS_DIR: "{{index .CLI_ARGS_LIST 1}}"
       FILENAME_FMT: '{{if (eq .SHELL_TARGET "zsh") "_%s" "%s"}}'
       COMMANDS:
@@ -156,7 +146,7 @@ tasks:
     cmd:
       for: { var: COMMANDS, as: COMMAND }
       cmd: >-
-        {{- $name := printf .FILENAME_FMT .COMMAND.NAME -}}
         {{- $cmd  := printf "%s %s" .COMMAND.NAME .COMMAND.ARGS -}}
+        {{- $name := printf .FILENAME_FMT .COMMAND.NAME -}}
         {{- $path := joinPath .COMPLETIONS_DIR $name -}}
         {{$cmd}} > {{$path|q}}

@@ -4,19 +4,19 @@ version: "3"
 
 vars:
   GO: '{{.GO | default "go"}}'
+
   OPENAPI_SPEC: '{{.OPENAPI_SPEC | default "./openapi.yml"}}'
 
-  BUILD_COMMIT: { sh: "git rev-parse --short HEAD" }
-  BUILD_VERSION: { sh: "git describe --tags --always --dirty" }
-  BUILD_BUILDTIME: '{{now | date "2006-01-02T15:04:05Z07:00"}}'
   BUILD_LDFLAGS: >-
     -s -w
     -X main.version={{.BUILD_VERSION | default "dev"}}
     -X main.commit={{.BUILD_COMMIT | default "unknown"}}
-    -X main.buildTime={{.BUILD_BUILDTIME}}
-  BUILD_FLAGS: -ldflags '{{.BUILD_LDFLAGS}}'
+    -X main.buildTime={{.BUILD_TIMESTAMP | default "unknown"}}
+  BUILD_FLAGS: -ldflags {{.BUILD_LDFLAGS|q}}
 
-  CMD_SERVICE: "./cmd/service"
+  SERVICE_CMD: ./cmd/service
+  SERVICE_RUN: "{{.GO}} run {{.BUILD_FLAGS}} {{.SERVICE_CMD}}"
+  SERVICE_BUILD_FMT: "{{.GO}} build {{.BUILD_FLAGS}} -o %s {{.SERVICE_CMD}}"
 
   OUTPUT:
     map:
@@ -33,7 +33,6 @@ env:
   SERVICE_POSTGRES_SSLMODE: '{{.POSTGRES_SSLMODE  | default "disable"}}'
 
 tasks:
-
   # Development Environment
 
   sync:
@@ -42,10 +41,15 @@ tasks:
 
   init:dotenv:development:
     internal: true
-    vars: { ENV_FILE: ".env.development" }
-    sources: ["./{{.ENV_FILE}}.example"]
-    generates: ["./{{.ENV_FILE}}"]
-    cmd: cp ./{{.ENV_FILE}}.example ./{{.ENV_FILE}}
+    vars:
+      ENV_FILE_NAME: ".env.development"
+      ENV_FILE: '{{relPath "." .ENV_FILE_NAME}}'
+      ENV_EXAMPLE_FILE: >-
+        {{- $name := printf "%s.example" .ENV_FILE_NAME -}}
+        {{relPath "." $name}}
+    sources: ["{{.ENV_FILE}}"]
+    generates: ["{{.ENV_EXAMPLE_FILE}}"]
+    cmd: "cp -v {{.ENV_EXAMPLE_FILE|q}} {{.ENV_FILE|q}}"
 
   # Build / Run
 
@@ -53,20 +57,20 @@ tasks:
     desc: Compile service binary
     sources: ["**/*.go", go.mod, { exclude: "**/*_test.go" }]
     generates: ["{{.OUTPUT.BUILD}}"]
-    cmd: "{{.GO}} build {{.BUILD_FLAGS}} -o {{.OUTPUT.BUILD}} {{.CMD_SERVICE}}"
+    cmd: "{{printf .SERVICE_BUILD_FMT .OUTPUT.BUILD}}"
 
   run:
     desc: Run service locally
-    cmd: "{{.GO}} run {{.BUILD_FLAGS}} {{.CMD_SERVICE}}"
+    cmd: "{{.SERVICE_RUN}}"
 
   dev:
     desc: Run service with live reload
-    deps: [task: init:dotenv:development]
+    deps: [{ task: init:dotenv:development }]
     vars:
       CONFIG: ".air.toml"
-      BUILD_CMD: "{{.GO}} build {{.BUILD_FLAGS}} -o {{.OUTPUT.DEV}} {{.CMD_SERVICE}}"
-    cmd: '{{.GO}} tool air -c {{.CONFIG}} --build.cmd="{{.BUILD_CMD}}"'
+      BUILD_CMD: "{{printf .SERVICE_BUILD_FMT .OUTPUT.DEV}}"
     generates: ["{{.OUTPUT.DEV}}"]
+    cmd: "{{.GO}} tool air -c {{.CONFIG}} --build.cmd={{.BUILD_CMD|q}}"
 
   doc:
     desc: Run godoc server
@@ -79,9 +83,7 @@ tasks:
   healthcheck:
     desc: Perform health check on service
     vars: { RETRIES: 3, INTERVAL: 3s }
-    cmd: >-
-      {{.GO}} run {{.BUILD_FLAGS}} {{.CMD_SERVICE}}
-      healthcheck -r {{.RETRIES}} -i {{.INTERVAL}}
+    cmd: "{{.SERVICE_RUN}} healthcheck -r {{.RETRIES}} -i {{.INTERVAL}}"
 
   # Quality Assurance
 
@@ -91,10 +93,10 @@ tasks:
 
   test-cover:
     desc: Run unit tests with coverage report
+    generates: ["{{.OUTPUT.TEST_COVER}}"]
     cmds:
       - "{{.GO}} test -v -race -coverprofile={{.OUTPUT.TEST_COVER}} ./..."
       - "{{.GO}} tool cover -func={{.OUTPUT.TEST_COVER}}"
-    generates: ["{{.OUTPUT.TEST_COVER}}"]
 
   lint:
     desc: Run linter
@@ -129,10 +131,19 @@ tasks:
     desc: OpenAPI spec
     sources: ["**/*.go"]
     generates: ["{{.OPENAPI_SPEC}}"]
-    cmd: "{{.GO}} run {{.BUILD_FLAGS}} {{.CMD_SERVICE}} openapi -o {{.OPENAPI_SPEC}}"
+    cmd: "{{.SERVICE_RUN}} openapi -o {{.OPENAPI_SPEC}}"
 
   gen:tool:*:
     internal: true
     desc: Generate code for the specified tool
     vars: { TOOL: "{{index .MATCH 0}}" }
     cmd: '{{.GO}} generate -x -run="go tool {{.TOOL}}" ./...'
+
+  # Clean
+
+  clean:
+    desc: Clean build artifacts
+    cmd:
+      for: { var: OUTPUT, as: ARTIFACT }
+      cmd: "rm -v {{.ARTIFACT|q}}"
+      if: "[ -e {{.ARTIFACT}} ]"
