@@ -55,45 +55,47 @@ tasks:
   run:docker:*:*:
     internal: true
     vars:
-      SERVICE: "{{index .MATCH 0}}"
-      COMMAND: "{{index .MATCH 1}}"
-      SHORTCUTS:
+      ALIASES:
         map:
           detach: up -d
           wait: up -d --wait
           flogs: logs -f
           clean: down -v
+      ARGS: >-
+        {{- $service := index .MATCH 0 -}}
+        {{- $command := index .MATCH 1 -}}
+        {{index .ALIASES $command | default $command}} {{$service}}
     cmd: "{{.DOCKER_COMPOSE}} {{.ARGS|trim}}"
 
   # Docker Commands
 
   docker:stop:
-    desc: Stop service(s)
+    desc: Stop services
     cmd: { task: run:docker::stop }
 
   docker:down:
-    desc: Bring down service(s)
+    desc: Bring down services
     cmd: { task: run:docker::down }
 
   docker:ps:
-    desc: Show status of service(s)
+    desc: Show status of services
     cmd: { task: run:docker::ps }
 
   docker:logs:
-    desc: Follow logs of service(s)
+    desc: Follow logs of services
     cmd: { task: run:docker::flogs }
 
   # DB / Postgres Service
 
-  service:db:up:
+  docker@db:up:
     desc: Start service in container
     cmd: { task: run:docker:postgres:up }
 
-  service:db:logs:
+  docker@db:logs:
     desc: Follow service container logs
     cmd: { task: run:docker:postgres:flogs }
 
-  service:db:reset:
+  docker@db:reset:
     desc: Reset container & volumes
     cmds:
       - task: run:docker:postgres:clean
@@ -101,7 +103,7 @@ tasks:
 
   # API Service
 
-  service:api:build:
+  docker@api:build:
     desc: Build service container
     vars:
       API_BUILD_VERSION: "{{.GIT_VERSION}}"
@@ -109,21 +111,21 @@ tasks:
       API_BUILD_BUILD_DATE: "{{.TIMESTAMP}}"
     cmd: { task: run:docker:api:build }
 
-  service:api:up:
+  docker@api:up:
     desc: Start service in container
     cmd: { task: run:docker:api:detach }
 
-  service:api:logs:
+  docker@api:logs:
     desc: Follow service container logs
     cmd: { task: run:docker:api:flogs }
 
   # Web Service
 
-  service:web:up:
+  docker@web:up:
     desc: Start service in container
     cmd: { task: run:docker:web:detach }
 
-  service:web:logs:
+  docker@web:logs:
     desc: Follow service container logs
     cmd: { task: run:docker:web:flogs }
 
