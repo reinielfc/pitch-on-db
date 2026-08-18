@@ -77,7 +77,7 @@
             {
                 "label": "backend:up", "detail": "Wait for the backend to start in detached mode",
                 "icon": { "color": "terminal.ansiBlue", "id": "server" },
-                "type": "shell", "command": "task", "args": ["web:backend:up"],
+                "type": "shell", "command": "task", "args": ["docker@api:up"],
                 "options": { "cwd": "${workspaceFolder:Root}" },
                 "problemMatcher": []
             },
